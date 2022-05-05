@@ -5,14 +5,14 @@ import numpy as np
 import gym
 import pandas as pd
 
-from tensorboardX import SummaryWrither
+from tensorboardX import SummaryWriter
 
 def main(env_config, agent_config, summary_writer, data_save_path):
     # Env
     env = gym.make(env_config['env_name'])
     env_obs_space = env.observation_space.shape
-    env_act_space = env.action_space.shape
-    print("env_name : {}, obs_space : {}, act_space : {}".format(env_config['env_name'], env_obs_space, env_act_space))
+    env_act_space = (4,) # env.action_space.shape
+    print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
 
     if len(env_obs_space) > 1:
         for space in env_obs_space:
@@ -44,7 +44,7 @@ def main(env_config, agent_config, summary_writer, data_save_path):
     else:
         raise ValueError('Please try to set the correct Agent')
 
-    Agent = RLAgent.Agent(obs_space, act_space, agent_config)
+    Agent = RLAgent(agent_config, obs_space, act_space)
     print('agent_name: {}'.format(agent_config['agent_name']))
 
     episode_data = dict()
@@ -93,58 +93,48 @@ def main(env_config, agent_config, summary_writer, data_save_path):
                 continue
             
             if agent_config['agent_name'] in ['DQN', 'PER_DQN']:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
-
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(episode_step)
             elif agent_config['agent_name'] == 'Double_DQN':
                 updated, critic_1_loss, critic_2_loss, trgt_q_mean, critic_1_value, critic_2_value = Agent.update()
-
             elif agent_config['agent_name'] in ['ICM_DQN', 'RND_DQN', 'Agent-57']:
                 updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
-
             elif agent_config['agent_name'] == 'Ape-X_DQN':
                 updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
-
             elif agent_config['agent_name'] == 'RAINBOW_DQN':
                 updated, critic_1_loss, critic_2_loss, trgt_q_mean, critic_1_value, critic_2_value = Agent.update()
-
             elif agent_config['agent_name'] == 'REDQ':
                 updated, critic_1_loss, critic_2_loss, trgt_q_mean, critic_1_value, critic_2_value = Agent.update()
 
             if agent_config['agent_name'] in ['DQN', 'PER_DQN']:
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
-
+                    summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
             elif agent_config['agent_name'] in 'Double_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
-
+                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
             elif agent_config['agent_name'] in ['ICM_DQN', 'RND_DQN', 'Agent-57']:
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
-
+                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
             elif agent_config['agent_name'] in 'Ape-X_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
-
+                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
             elif agent_config['agent_name'] in 'RAINBOW_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
-
+                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
             elif agent_config['agent_name'] in 'REDQ':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.gradient_steps)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.gradient_steps)
+                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
+                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
 
         env.close()
 
@@ -179,38 +169,38 @@ if __name__ == '__main__':
         raise ValueError('Please try to correct env_switch')
         
     if agent_switch == 1:
-        agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 1024, \
+        agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.9, \
+                        'update_freq': 2, 'target_update_freq': 4, 'batch_size': 128, 'warm_up': 1024, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 2:
-        agent_config = {'agent_name': 'Double_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 256, 'warm_up': 300, \
+        agent_config = {'agent_name': 'Double_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 256, 'warm_up': 300, \
                         'lr_critic': 0.004, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 3:
-        agent_config = {'agent_name': 'PER_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'PER_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 4:
-        agent_config = {'agent_name': 'ICM_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'ICM_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_icm': 0.001, 'lr_critic': 0.002, 'use_PER': True, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 5:
-        agent_config = {'agent_name': 'RND_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'RND_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_rnd': 0.001, 'lr_critic': 0.002, 'use_PER': True, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 6: # Todo
-        agent_config = {'agent_name': 'Ape-X_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'Ape-X_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 7: # Todo
-        agent_config = {'agent_name': 'RAINBOW_DQN', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'RAINBOW_DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 8: # Todo
-        agent_config = {'agent_name': 'Agent-57', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'Agent-57', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
     elif agent_switch == 9: # Todo
-        agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
+        agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'epsilon': 0.9, 'update_freq': 2, 'batch_size': 128, 'warm_up': 0, \
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'reward_normalize' : False}
-     else:
+    else:
         raise ValueError('Please try to correct agent_switch')
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
 
     result_path = parent_path + '/results/{env}/{agent}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string
     data_save_path = parent_path + '\\results\\{env}\\{agent}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string + '\\'

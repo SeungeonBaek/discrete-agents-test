@@ -8,9 +8,10 @@ from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
 
+from utils.replay_buffer import ExperienceMemory
 
 class Critic(Model):
-    def __init__(self, obs_size):
+    def __init__(self, act_size):
         super(Critic,self).__init__()
         self.initializer = initializers.he_normal()
         self.regularizer = regularizers.l2(l=0.005)
@@ -19,7 +20,7 @@ class Critic(Model):
         self.l2 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l3 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l4 = Dense(32, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.value = Dense(obs_size, activation = 'softmax')
+        self.value = Dense(act_size, activation = 'softmax')
 
     def call(self, state_action):
         l1 = self.l1(state_action) # 확인
@@ -33,86 +34,65 @@ class Critic(Model):
 
 class Agent:
     """
-    input argument: hyper_param, obs_shape_n, act_shape_n
+    input argument: agent_config, obs_shape_n, act_shape_n
 
-    hyper_param: lr_critic_main, gamma, tau, update_freq, batch_size, warm_up, gaussian_std, noise_reduce_rate
+    agent_config: lr_critic_main, gamma, tau, update_freq, batch_size, warm_up
     """
-    def __init__(self, name, hyper_param, obs_shape_n, act_shape_n):
-        self.name = name
+    def __init__(self, agent_config, obs_shape_n, act_shape_n):
+        self.name = agent_config['agent_name']
         
-        self.critic_lr_main = hyper_param['lr_critic_main']
+        self.critic_lr_main = agent_config['lr_critic']
 
-        self.gamma = hyper_param['gamma']
-        self.tau = hyper_param['tau']
-        self.update_freq = hyper_param['update_freq']
+        self.gamma = agent_config['gamma']
+        self.epsilon = agent_config['epsilon']
+        self.epsilon_decaying_rate = agent_config['epsilon_decaying_rate']
 
-        self.replay_buffer = Memory.ExperienceMemory(2000000)
-        self.batch_size = hyper_param['batch_size']
-        self.warm_up = hyper_param['warm_up']
+        self.update_freq = agent_config['update_freq']
+        self.target_update_freq = agent_config['target_update_freq']
+
+        self.replay_buffer = ExperienceMemory(self.agent_config['buffer_size'])
+        self.batch_size = agent_config['batch_size']
+        self.warm_up = agent_config['warm_up']
         self.update_step = 0
-        self.std = hyper_param['gaussian_std']
-        self.reduce_rate = hyper_param['noise_reduce_rate']
 
         self.obs_size = obs_shape_n
         self.act_size = act_shape_n
         print('obs_size: {}, act_size: {}'.format(self.obs_size, self.act_size))
 
-        self.critic_main = Critic(self.obs_size)
-        self.critic_target = Critic(self.obs_size)
+        self.critic_main = Critic(self.act_size)
+        self.critic_target = Critic(self.act_size)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)
 
     def action(self, obs):
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
-        # print('in action, obs: ', np.shape(np.array(obs)))
-        mu = self.actor_main(obs)
-        # print('in action, mu: ', np.shape(np.array(mu)))
+        # print(f'in action, obs: {np.shape(np.array(obs))}')
+        values = self.critic_main(obs)
+        # print(f'in action, values: {np.shape(np.array(values))}')
 
         if self.update_step > self.warm_up:
-            std = tf.convert_to_tensor([self.std]*4, dtype=tf.float32)
-            dist = tfp.distributions.Normal(loc=mu, scale=std)
-            action = tf.squeeze(dist.sample())
-            self.std = self.std * self.reduce_rate
+            if random_val:=np.random.rand() > self.epsilon:
+                action = np.argmax(values.numpy())
+            else:
+                action = np.random.randint(self.act_size)
+        else:
+            action = np.random.randint(self.act_size)
+        # print(f'in action, action: {np.shape(np.array(action))}')
 
-        action = mu.numpy()
-        # print('in action, action: ', np.shape(np.array(action)))
-        action = np.clip(action, -1, 1)
-        # print('in action, clipped_action: ', np.shape(np.array(action)))
-        
-        return action
-
-    def target_action(self, obs):
-        obs = tf.convert_to_tensor(obs, dtype=tf.float32)
-        # print('in trgt action, obs: ', np.shape(np.array(obs)))
-        mu = self.actor_target(obs)
-        # print('in trgt action, mu: ', np.shape(np.array(mu)))
-
-        if self.update_step > self.warm_up:
-            std = tf.convert_to_tensor([self.std]*4, dtype=tf.float32)
-            dist = tfp.distributions.Normal(loc=mu, scale=std)
-            action = tf.squeeze(dist.sample())
-
-        action = mu.numpy()
-        # print('in trgt action, action: ', np.shape(np.array(action)))
-        action = np.clip(action, -1, 1)
-        # print('in trgt action, clipped_action: ', np.shape(np.array(action)))
+        self.epsilon *= self.epsilon_decaying_rate
 
         return action
 
     def update_target(self):
-        critic_weithgs = []
-        critic_targets = self.critic_target.get_weights()
-        
-        for idx, weight in enumerate(self.critic_main.get_weights()):
-            critic_weithgs.append(weight * self.tau + critic_targets[idx] * (1 - self.tau))
-        self.critic_target.set_weights(critic_weithgs)
+        critic_main_weight = self.critic_main.get_weights()
+        self.critic_target.set_weights(critic_main_weight)
 
     def update(self, steps):
         if self.replay_buffer._len() < self.batch_size:
-            return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            return False, 0.0, 0.0, 0.0
         if not steps % self.update_freq == 0:  # only update every update_freq
-            return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            return False, 0.0, 0.0, 0.0
 
         updated = True
         self.update_step += 1
@@ -128,15 +108,26 @@ class Agent:
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
             tape_critic.watch(critic_variable)
-            target_action = self.target_action(next_states)
+            # print(f'in update, states: {states.shape}')
+            # print(f'in update, next_states: {next_states.shape}')
+            # print(f'in update, actions: {actions.shape}')
+            # print(f'in update, rewards: {rewards.shape}')
             
-            target_q_next = tf.squeeze(self.critic_target(tf.concat([next_states,target_action], 1)), 1)
+            target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
+            # print(f'in update, target_q_next: {target_q_next.shape}')
 
             target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+            # print(f'in update, target_q_next: {target_q_next.shape}')
 
-            current_q = tf.squeeze(self.critic_main(tf.concat([states,actions], 1)), 1)
+            current_q = self.critic_main(states)
+            # print(f'in update, current_q: {current_q.shape}')
+            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_size)
+            # print(f'in update, action_one_hot: {action_one_hot.shape}')
+            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+            # print(f'in update, current_q: {current_q.shape}')
         
             critic_loss = tf.keras.losses.MSE(target_q, current_q)
+            # print(f'in update, critic_loss: {critic_loss.shape}')
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
 
@@ -146,7 +137,8 @@ class Agent:
         current_q_val = current_q.numpy()
         critic_loss_val = critic_loss.numpy()
 
-        self.update_target()
+        if self.update_step % self.target_update_freq == 0:
+            self.update_target()
 
         return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
 
