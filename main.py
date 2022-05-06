@@ -1,3 +1,4 @@
+# test
 import os
 from datetime import datetime
 
@@ -171,7 +172,7 @@ if __name__ == '__main__':
     agent_switch = 1 # 1: DQN, 2: Double_DQN, 3: PER_DQN, 4: ICM_DQN, 5: RND_DQN, # 6: Ape-X_DQN, 7: RAINBOW_DQN, 8: Agent-57, 9: REDQ
 
     if env_switch == 1:
-        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
+        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 5000}
     elif env_switch == 2: # Todo
         env_config = {'env_name': 'coin-run', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo
