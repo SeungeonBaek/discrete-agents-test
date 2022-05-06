@@ -167,7 +167,7 @@ def main(env_config, agent_config, summary_writer, data_save_path):
     env.close()
 
 if __name__ == '__main__':
-    env_switch = 2 # 1: LunarLander-v2, 2: procgen, 3: high-way
+    env_switch = 1 # 1: LunarLander-v2, 2: procgen, 3: high-way
     agent_switch = 1 # 1: DQN, 2: Double_DQN, 3: PER_DQN, 4: ICM_DQN, 5: RND_DQN, # 6: Ape-X_DQN, 7: RAINBOW_DQN, 8: Agent-57, 9: REDQ
 
     if env_switch == 1:
