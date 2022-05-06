@@ -7,8 +7,9 @@ import gym
 import pandas as pd
 
 from tensorboardX import SummaryWriter
+import wandb
 
-def main(env_config, agent_config, summary_writer, data_save_path):
+def main(env_config, agent_config, data_save_path, wandb_session):
     # Env
     if env_config['env_name'] == 'LunarLander-v2':
         env = gym.make(env_config['env_name'])
@@ -71,6 +72,7 @@ def main(env_config, agent_config, summary_writer, data_save_path):
 
         prev_obs = None
         prev_action = None
+        episode_rewards = []
 
         obs = env.reset()
         obs = np.array(obs)
@@ -92,6 +94,7 @@ def main(env_config, agent_config, summary_writer, data_save_path):
             action = np.array(action)
 
             episode_score += reward
+            episode_rewards.append(reward)
 
             # Save_xp
             if episode_step > 2:
@@ -119,40 +122,58 @@ def main(env_config, agent_config, summary_writer, data_save_path):
 
             if agent_config['agent_name'] in ['DQN', 'PER_DQN']:
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_value': critic_value
+                    }, step=Agent.update_step)
             elif agent_config['agent_name'] in 'Double_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_1_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_1_value': critic_1_value
+                    }, step=Agent.update_step)
             elif agent_config['agent_name'] in ['ICM_DQN', 'RND_DQN', 'Agent-57']:
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_1_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_1_value': critic_1_value
+                    }, step=Agent.update_step)
             elif agent_config['agent_name'] in 'Ape-X_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_1_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_1_value': critic_1_value
+                    }, step=Agent.update_step)
             elif agent_config['agent_name'] in 'RAINBOW_DQN':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_1_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_1_value': critic_1_value
+                    }, step=Agent.update_step)
             elif agent_config['agent_name'] in 'REDQ':
                 if updated:
-                    summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_1_loss, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                    summary_writer.add_scalar('02_Critic/Critic_1_value', critic_1_value, Agent.update_step)
+                    wandb_session.log({
+                        "01_Loss/Critic_1_loss": critic_loss,
+                        '02_Critic/Target_Q_mean': trgt_q_mean, 
+                        '02_Critic/Critic_1_value': critic_1_value
+                    }, step=Agent.update_step)
 
         env.close()
 
-        summary_writer.add_scalar('00_Episode/Score', episode_score, episode_num)
-        summary_writer.add_scalar('00_Episode/Average_reward', episode_score/episode_step, episode_num)
-        summary_writer.add_scalar('00_Episode/Steps', episode_step, episode_num)
+        wandb_session.log({
+            '00_Episode/Average_reward': episode_score/episode_step,
+            "00_Episode/Score": episode_score,
+            '00_Episode/Steps': episode_step,
+            "episode_num": episode_num
+        })
+
+        histogram = wandb.Histogram(episode_rewards)
+        wandb_session.log({"reward_hist": histogram})
 
         episode_data['episode_score'][episode_num-1] = episode_score
         episode_data['mean_reward'][episode_num-1]   = episode_score/episode_step
@@ -215,6 +236,6 @@ if __name__ == '__main__':
 
     result_path = parent_path + '/results/{env}/{agent}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string
     data_save_path = parent_path + '\\results\\{env}\\{agent}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string + '\\'
-    summary_writer = SummaryWriter(result_path+'/tensorboard/')
+    wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
 
-    main(env_config, agent_config, summary_writer, data_save_path)
+    main(env_config, agent_config, data_save_path, wandb_session)
