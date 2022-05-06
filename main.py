@@ -161,7 +161,7 @@ if __name__ == '__main__':
                      # 6: Ape-X_DQN, 7: RAINBOW_DQN, 8: Agent-57, 9: REDQ
 
     if env_switch == 1:
-        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
+        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 5000}
     elif env_switch == 2: # Todo
         env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo
