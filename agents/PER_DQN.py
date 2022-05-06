@@ -71,8 +71,9 @@ class Agent:
         values = self.critic_main(obs)
         # print(f'in action, values: {np.shape(np.array(values))}')
 
+        random_val = np.random.rand()
         if self.update_step > self.warm_up:
-            if random_val:=np.random.rand() > self.epsilon:
+            if random_val > self.epsilon:
                 action = np.argmax(values.numpy())
             else:
                 action = np.random.randint(self.act_size)
