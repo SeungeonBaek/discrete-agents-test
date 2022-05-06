@@ -10,6 +10,7 @@ from tensorflow.keras.layers import Dense
 
 from utils.replay_buffer import ExperienceMemory
 
+
 class Critic(Model):
     def __init__(self, act_size):
         super(Critic,self).__init__()
@@ -36,11 +37,10 @@ class Agent:
     """
     input argument: agent_config, obs_shape_n, act_shape_n
 
-    agent_config: lr_critic_main, gamma, tau, update_freq, batch_size, warm_up
+    agent_config: lr_critic_main, gamma, update_freq, batch_size, warm_up
     """
     def __init__(self, agent_config, obs_shape_n, act_shape_n):
         self.name = agent_config['agent_name']
-        
         self.critic_lr_main = agent_config['lr_critic']
 
         self.gamma = agent_config['gamma']
@@ -50,7 +50,7 @@ class Agent:
         self.update_freq = agent_config['update_freq']
         self.target_update_freq = agent_config['target_update_freq']
 
-        self.replay_buffer = ExperienceMemory(self.agent_config['buffer_size'])
+        self.replay_buffer = ExperienceMemory(agent_config['buffer_size'])
         self.batch_size = agent_config['batch_size']
         self.warm_up = agent_config['warm_up']
         self.update_step = 0
