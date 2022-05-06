@@ -150,31 +150,28 @@ class Agent:
 
     def save_xp(self, obs, new_obs, reward, action, done):
         # Store transition in the replay buffer.
-            state_tf = tf.convert_to_tensor([obs], dtype = tf.float32)
-            action_tf = tf.convert_to_tensor([action], dtype = tf.float32)
-            next_state_tf = tf.convert_to_tensor([new_obs], dtype = tf.float32)
+        state_tf = tf.convert_to_tensor([obs], dtype = tf.float32)
+        action_tf = tf.convert_to_tensor([action], dtype = tf.float32)
+        reward_tf = tf.convert_to_tensor([reward], dtype = tf.float32)
+        next_state_tf = tf.convert_to_tensor([new_obs], dtype = tf.float32)
+        done_tf = tf.convert_to_tensor([done], dtype = tf.float32)
 
-            target_q_next_1 = tf.squeeze(self.critic_target_1(tf.concat([next_state_tf,target_action_tf], 1)), 1)
-            target_q_next = tf.math.minimum(target_q_next_1, target_q_next_2)
-            # print('target_q_next_2: {}'.format(target_q_next_2))
-            # print('target_q_next: {}'.format(target_q_next))
-            
-            current_q_1 = tf.squeeze(self.critic_main_1(tf.concat([state_tf,action_tf], 1)), 1)
-            # print('current_q_1: {}'.format(current_q_1))
-            
-            target_q = reward + self.gamma * target_q_next * (1.0 - tf.cast(done, dtype=tf.float32))
-            # print('target_q: {}'.format(target_q))
-            
-            td_errors_1 = target_q - current_q_1
-            # print('td_errors_2: {}'.format(td_errors_2))
+        target_q_next = tf.reduce_max(self.critic_target(next_state_tf), axis=1)
+        # print(f'in update, target_q_next: {target_q_next.shape}')
+        target_q = reward_tf + self.gamma * target_q_next * (1.0 - tf.cast(done_tf, dtype=tf.float32))
+        # print(f'in update, target_q_next: {target_q_next.shape}')
 
-            td_error = (0.5 * tf.math.square(td_errors_1) + 0.5 * tf.math.square(td_errors_2))
-            # print('td_error: {}'.format(td_error))
+        current_q = self.critic_main(state_tf)
+        # print(f'in update, current_q: {current_q.shape}')
+        action_one_hot = tf.one_hot(tf.cast(action_tf, tf.int32), self.act_size)
+        # print(f'in update, action_one_hot: {action_one_hot.shape}')
+        current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+        # print(f'in update, current_q: {current_q.shape}')
 
-            td_error = td_error.numpy()
-            # print('td_error: {}'.format(td_error))
+        critic_error = tf.math.abs(tf.subtract(target_q - current_q))
+        # print(f'in update, current_q: {current_q.shape}')
 
-        self.replay_buffer.add(critic_error[0], (obs, new_obs, reward, action, done))
+        self.replay_buffer.add(critic_error.numpy()[0], (obs, new_obs, reward, action, done))
 
     def load_models(self, path):
         print('Load Model Path : ', path)
