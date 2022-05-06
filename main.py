@@ -3,24 +3,36 @@ from datetime import datetime
 
 import numpy as np
 import gym
+
 import pandas as pd
 
 from tensorboardX import SummaryWriter
 
 def main(env_config, agent_config, summary_writer, data_save_path):
     # Env
-    env = gym.make(env_config['env_name'])
-    env_obs_space = env.observation_space.shape
-    env_act_space = (4,) # env.action_space.shape
+    if env_config['env_name'] == 'LunarLander-v2':
+        env = gym.make(env_config['env_name'])
+        env_obs_space = env.observation_space.shape
+        env_act_space = env.action_space.n
+    elif env_config['env_name'] == 'coin-run':
+        from procgen import ProcgenEnv
+        env = ProcgenEnv(num_envs=1, env_name="coinrun")
+        env_obs_space = env.observation_space['rgb'].shape
+        env_act_space = env.action_space.n
+    elif env_config['env_name'] == 'highway-env':
+        pass
+    else:
+        raise ValueError('Please try to set the correct Env')
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
 
     if len(env_obs_space) > 1:
+        obs_space = 1
         for space in env_obs_space:
             obs_space *= space
     else:
         obs_space = env_obs_space[0]
 
-    act_space = env_act_space[0]
+    act_space = env_act_space
 
     # Agent
     if agent_config['agent_name'] == 'DQN':
@@ -155,14 +167,13 @@ def main(env_config, agent_config, summary_writer, data_save_path):
     env.close()
 
 if __name__ == '__main__':
-    env_switch = 1 # 1: LunarLander-v2, 2: ??, 3: 우리 환경
-    agent_switch = 1 # 1: DQN, 2: Double_DQN, 3: PER_DQN, 4: ICM_DQN, 5: RND_DQN, 
-                     # 6: Ape-X_DQN, 7: RAINBOW_DQN, 8: Agent-57, 9: REDQ
+    env_switch = 2 # 1: LunarLander-v2, 2: procgen, 3: high-way
+    agent_switch = 1 # 1: DQN, 2: Double_DQN, 3: PER_DQN, 4: ICM_DQN, 5: RND_DQN, # 6: Ape-X_DQN, 7: RAINBOW_DQN, 8: Agent-57, 9: REDQ
 
     if env_switch == 1:
         env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 2: # Todo
-        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
+        env_config = {'env_name': 'coin-run', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo
         env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     else:
