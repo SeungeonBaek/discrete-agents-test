@@ -82,12 +82,11 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 done = True
                 continue
             
-            if rl_confing['tensorboard']:
-                rl_logger.step_logging_tensorboard(Agent)
-            if rl_confing['wandb']:
-                rl_logger.step_logging_wandb(Agent)
+            rl_logger.step_logging_tensorboard(Agent)
 
         env.close()
+
+        rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards)
 
         if rl_confing['csv_logging']:
             episode_data['episode_score'][episode_num-1] = episode_score
