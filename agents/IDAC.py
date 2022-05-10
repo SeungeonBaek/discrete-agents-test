@@ -8,11 +8,13 @@ from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
 
-from utils.prioritized_memory import PrioritizedMemory
+from utils.replay_buffer import ExperienceMemory
 
-class Critic(Model):
+
+class Critic(Model): # Q network
     def __init__(self, act_size):
         super(Critic,self).__init__()
+        # network 형상 정의
         self.initializer = initializers.he_normal()
         self.regularizer = regularizers.l2(l=0.005)
         
@@ -32,15 +34,14 @@ class Critic(Model):
         return value
 
 
-class Agent:
+class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하는 녀석이다!
     """
     input argument: agent_config, obs_shape_n, act_shape_n
 
-    agent_config: lr_critic_main, gamma, tau, update_freq, batch_size, warm_up
+    agent_config: lr_critic_main, gamma, update_freq, batch_size, warm_up
     """
     def __init__(self, agent_config, obs_shape_n, act_shape_n):
         self.name = agent_config['agent_name']
-        
         self.critic_lr_main = agent_config['lr_critic']
 
         self.gamma = agent_config['gamma']
@@ -50,7 +51,7 @@ class Agent:
         self.update_freq = agent_config['update_freq']
         self.target_update_freq = agent_config['target_update_freq']
 
-        self.replay_buffer = PrioritizedMemory(self.agent_config['buffer_size'])
+        self.replay_buffer = ExperienceMemory(agent_config['buffer_size'])
         self.batch_size = agent_config['batch_size']
         self.warm_up = agent_config['warm_up']
         self.update_step = 0
@@ -98,14 +99,13 @@ class Agent:
         updated = True
         self.update_step += 1
         
-        states, next_states, rewards, actions, dones, idxs, is_weight = self.replay_buffer.sample(self.batch_size)
+        states, next_states, rewards, actions, dones = self.replay_buffer.sample(self.batch_size)
         
         states = tf.convert_to_tensor(states, dtype = tf.float32)
         next_states = tf.convert_to_tensor(next_states, dtype = tf.float32)
         rewards = tf.convert_to_tensor(rewards, dtype = tf.float32)
         actions = tf.convert_to_tensor(actions, dtype = tf.float32)
         dones = tf.convert_to_tensor(dones, dtype = tf.bool)
-        is_weight = tf.convert_to_tensor(is_weight, dtype=tf.float32)
         
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
@@ -127,10 +127,8 @@ class Agent:
             # print(f'in update, action_one_hot: {action_one_hot.shape}')
             current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
             # print(f'in update, current_q: {current_q.shape}')
-
-            critic_losses = tf.multiply(is_weight, tf.math.square(tf.subtract(target_q, current_q)))
-            # print(f'in update, critic_losses: {critic_losses.shape}')
-            critic_loss = tf.reduce_mean(critic_losses)
+        
+            critic_loss = tf.keras.losses.MSE(target_q, current_q)
             # print(f'in update, critic_loss: {critic_loss.shape}')
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
@@ -144,35 +142,11 @@ class Agent:
         if self.update_step % self.target_update_freq == 0:
             self.update_target()
 
-        for i in range(self.batch_size):
-            self.replay_buffer.update(idxs[i], critic_losses[i].numpy())
-
         return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
 
     def save_xp(self, obs, new_obs, reward, action, done):
         # Store transition in the replay buffer.
-        state_tf = tf.convert_to_tensor([obs], dtype = tf.float32)
-        action_tf = tf.convert_to_tensor([action], dtype = tf.float32)
-        reward_tf = tf.convert_to_tensor([reward], dtype = tf.float32)
-        next_state_tf = tf.convert_to_tensor([new_obs], dtype = tf.float32)
-        done_tf = tf.convert_to_tensor([done], dtype = tf.float32)
-
-        target_q_next = tf.reduce_max(self.critic_target(next_state_tf), axis=1)
-        # print(f'in update, target_q_next: {target_q_next.shape}')
-        target_q = reward_tf + self.gamma * target_q_next * (1.0 - tf.cast(done_tf, dtype=tf.float32))
-        # print(f'in update, target_q_next: {target_q_next.shape}')
-
-        current_q = self.critic_main(state_tf)
-        # print(f'in update, current_q: {current_q.shape}')
-        action_one_hot = tf.one_hot(tf.cast(action_tf, tf.int32), self.act_size)
-        # print(f'in update, action_one_hot: {action_one_hot.shape}')
-        current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
-        # print(f'in update, current_q: {current_q.shape}')
-
-        critic_error = tf.math.abs(tf.subtract(target_q - current_q))
-        # print(f'in update, current_q: {current_q.shape}')
-
-        self.replay_buffer.add(critic_error.numpy()[0], (obs, new_obs, reward, action, done))
+        self.replay_buffer.add((obs, new_obs, reward, action, done))
 
     def load_models(self, path):
         print('Load Model Path : ', path)

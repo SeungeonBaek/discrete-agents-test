@@ -5,4 +5,4 @@
 11-Neural_CO_with_RL/
 results/
 __pycache__
-wandb
+wandb/
