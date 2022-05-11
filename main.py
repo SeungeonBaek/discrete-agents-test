@@ -16,7 +16,7 @@ from utils.rl_loader import RLLoader
 
 def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path: str, rl_logger: RLLogger, rl_loader: RLLoader):
     # Env
-    env, env_obs_space, env_act_space = rl_loader.env_loader(env_config)
+    env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
 
     if len(env_obs_space) > 1:
@@ -29,7 +29,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
     act_space = env_act_space
 
     # Agent
-    RLAgent = rl_loader.agent_loader(agent_config)
+    RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
     print('agent_name: {}'.format(agent_config['agent_name']))
 
@@ -108,17 +108,16 @@ if __name__ == '__main__':
 
     Agent
      1: DQN,     2: ICM_DQN,   3: RND_DQN,   4: NGU_DQN
-     5: DDQN,    6: ICM_DDQN,  7: RND_DDQN,  8: NGU_DDQN
-     9: PPO,    10: MEPPO
-    11: SAC,    12: TQC_SAC
-    13: QR_DQN, 14: IQN,      15: QUOTA,    16: IDAC
-    17: RAINBOW 18: ICM_RAINBOW, 19: RND_RAINBOW, 20: NGU_RAINBOW
-    21: Agent-57
-    22: REDQ,   23: ICM_REDQ, 24: RND_REDQ, 25: NGU_REDQ
+     5: PPO,     6: MEPPO
+     7: SAC,     8: TQC_SAC
+     9: QR_DQN, 10: IQN,      11: QUOTA,    12: IDAC
+    13: RAINBOW 14: ICM_RAINBOW, 15: RND_RAINBOW, 16: NGU_RAINBOW
+    17: Agent-57
+    18: REDQ,   19: ICM_REDQ, 20: RND_REDQ, 21: NGU_REDQ
     """
 
     env_switch = 1
-    agent_switch = 5
+    agent_switch = 1
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
@@ -133,7 +132,7 @@ if __name__ == '__main__':
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
 
-    rl_logger = RLLogger(agent_config, summary_writer, wandb_session)
+    rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
     main(env_config, agent_config, rl_config, data_save_path, rl_logger, rl_loader)

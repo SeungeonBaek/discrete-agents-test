@@ -30,24 +30,7 @@ class RLLoader():
 
     def agent_loader(self):
         if self.agent_config['agent_name'] == 'DQN':
-            if self.agent_config['extension']['name'] == 'ICM':
-                from agents.ICM_DQN import Agent
-            elif self.agent_config['extension']['name'] == 'RND':
-                from agents.RND_DQN import Agent
-            elif self.agent_config['extension']['name'] == 'NGU':
-                from agents.NGU_DQN import Agent
-            else:
-                from agents.DQN import Agent
-
-        if self.agent_config['agent_name'] == 'DDQN':
-            if self.agent_config['extension']['name'] == 'ICM':
-                from agents.ICM_DDQN import Agent
-            elif self.agent_config['extension']['name'] == 'RND':
-                from agents.RND_DDQN import Agent
-            elif self.agent_config['extension']['name'] == 'NGU':
-                from agents.NGU_DDQN import Agent
-            else:
-                from agents.DDQN import Agent
+            from agents.DQN import Agent
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
@@ -70,28 +53,14 @@ class RLLoader():
         elif self.agent_config['agent_name'] == 'IDAC':
             from agents.IDAC import Agent
 
-        if self.agent_config['agent_name'] == 'RAINBOW_DQN':
-            if self.agent_config['extension']['name'] == 'ICM':
-                from agents.ICM_RAINBOW_DQN import Agent
-            elif self.agent_config['extension']['name'] == 'RND':
-                from agents.RND_RAINBOW_DQN import Agent
-            elif self.agent_config['extension']['name'] == 'NGU':
-                from agents.NGU_RAINBOW_DQN import Agent
-            else:
-                from agents.RAINBOW_DQN import Agent
+        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
+            from agents.RAINBOW_DQN import Agent
 
         elif self.agent_config['agent_name'] == 'Agent57':
             from agents.Agent_57 import Agent
 
-        if self.agent_config['agent_name'] == 'REDQ':
-            if self.agent_config['extension']['name'] == 'ICM':
-                from agents.ICM_REDQ import Agent
-            elif self.agent_config['extension']['name'] == 'RND':
-                from agents.RND_REDQ import Agent
-            elif self.agent_config['extension']['name'] == 'NGU':
-                from agents.NGU_REDQ import Agent
-            else:
-                from agents.REDQ import Agent
+        elif self.agent_config['agent_name'] == 'REDQ':
+            from agents.REDQ import Agent
 
         else:
             raise ValueError('Please try to set the correct Agent')
