@@ -1,6 +1,6 @@
 
 # DQN
-DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99995, 'update_freq': 2, 'target_update_freq': 3,
+DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.5, 'epsilon_decaying_rate': 0.99995, 'update_freq': 2, 'target_update_freq': 3,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':True}
 

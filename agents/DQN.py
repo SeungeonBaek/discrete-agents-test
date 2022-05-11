@@ -137,6 +137,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         return action
 
     def get_intrinsic_reward(self, state, next_state, action):
+        reward_int = 0
         if self.extension_name == 'ICM':
             state = tf.convert_to_tensor([state], dtype=tf.float32)
             next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
@@ -145,6 +146,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
             feature_next_s, pred_feature_next_s, _ = self.icm((state, next_state, action))
 
             reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s))), 0, 5)
+            reward_int = reward_int.numpy()
         
         elif self.extension_name == 'RND':
             next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
@@ -153,11 +155,12 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
             predict_value = self.rnd_predict(next_state)
 
             reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(predict_value, target_value))), 0, 5)
+            reward_int = reward_int.numpy()
 
         elif self.extension_name == 'NGU':
             pass
 
-        return reward_int.numpy()
+        return reward_int
 
     def update_target(self):
         critic_main_weight = self.critic_main.get_weights()
@@ -165,16 +168,6 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
     def update(self):
         if self.replay_buffer._len() < self.batch_size:
-            if self.extension_name == 'ICM':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'RND':
-                return False, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'NGU':
-                return False, 0.0, 0.0, 0.0
-            else:
-                return False, 0.0, 0.0, 0.0
-        if not self.update_step % self.update_freq == 0:  # only update every update_freq
-            self.update_step += 1
             if self.extension_name == 'ICM':
                 return False, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'RND':
@@ -273,8 +266,8 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         rnd_pred_loss_val = 0
         # extensions
         if self.extension_name == 'ICM':
-            icm_variable = self.icm.trainable_variables
             if self.update_step % self.icm_update_freq == 0:
+                icm_variable = self.icm.trainable_variables
                 with tf.GradientTape() as tape_icm:
                     tape_icm.watch(icm_variable)
 
@@ -285,15 +278,15 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
                     icm_pred_loss = tf.add(icm_pred_next_s_loss, icm_pred_a_loss)
 
-                    icm_pred_next_s_loss_val = icm_pred_next_s_loss.numpy()
-                    icm_pred_a_loss_val = icm_pred_a_loss.numpy()
-
                 grads_icm, _ = tf.clip_by_global_norm(tape_icm.gradient(icm_pred_loss, icm_variable), 0.5)
                 self.icm_opt.apply_gradients(zip(grads_icm, icm_variable))            
 
+                icm_pred_next_s_loss_val = icm_pred_next_s_loss.numpy()
+                icm_pred_a_loss_val = icm_pred_a_loss.numpy()
+
         elif self.extension_name == 'RND':
-            rnd_variable = self.rnd_predict.trainable_variables
             if self.update_step % self.rnd_update_freq == 0:
+                rnd_variable = self.rnd_predict.trainable_variables
                 with tf.GradientTape() as tape_rnd:
                     tape_rnd.watch(rnd_variable)
             
@@ -301,11 +294,12 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
                     targets = self.rnd_target(next_states)
 
                     rnd_pred_loss = tf.reduce_mean(tf.math.square(tf.subtract(predictions, targets)))
-                    rnd_pred_loss_val = rnd_pred_loss.numpy()
 
                 grads_rnd, _ = tf.clip_by_global_norm(tape_rnd.gradient(rnd_pred_loss, rnd_variable), 0.5)
-                # grads_actor = tape_actor.gradient(actor_loss, self.actor_main.trainable_variables)        
                 self.rnd_opt.apply_gradients(zip(grads_rnd, rnd_variable))
+
+                rnd_pred_loss_val = rnd_pred_loss.numpy()
+
 
         elif self.extension_name == 'NGU':
             pass
