@@ -14,6 +14,7 @@ from utils.prioritized_memory_numpy import PrioritizedMemory
 from agents.ICM_model import ICM_model
 from agents.RND_model import RND_target, RND_predict
 
+
 class Critic(Model): # Q network
     def __init__(self, act_space):
         super(Critic,self).__init__()
@@ -45,7 +46,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
                     name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
                     buffer_size, use_PER, use_ERE, reward_normalize
                     extension = {
-                        'gaussian_std, 'noise_clip', 'noise_reduce_rate'
+                        'name', 'use_DDQN'
                     }
                 }
         obs_shape_n: shpae of observation
@@ -96,6 +97,25 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         self.extension_config = self.agent_config['extension']
         self.extension_name = self.extension_config['name']
 
+        if self.extension_name == 'ICM':
+            self.icm_update_freq = self.extension_config['icm_update_freq']
+
+            self.icm_lr = self.extension_config['icm_lr']
+            self.icm_feature_dim = self.extension_config['icm_feature_dim']
+            self.icm = ICM_model(self.obs_space, self.act_space, self.icm_feature_dim)
+            self.icm_opt = Adam(self.icm_lr)
+
+        elif self.extension_name == 'RND':
+            self.rnd_update_freq = self.extension_config['rnd_update_freq']
+
+            self.rnd_lr = self.extension_config['rnd_lr']
+            self.rnd_target = RND_target(self.obs_space, self.act_space)
+            self.rnd_predict = RND_predict(self.obs_space, self.act_space)
+            self.rnd_opt = Adam(self.rnd_lr)
+
+        elif self.extension_name == 'NGU':
+            self.icm_lr = self.extension_config['icm_lr']
+
     def action(self, obs):
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
@@ -116,16 +136,53 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
         return action
 
+    def get_intrinsic_reward(self, state, next_state, action):
+        if self.extension_name == 'ICM':
+            state = tf.convert_to_tensor([state], dtype=tf.float32)
+            next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
+            action = tf.convert_to_tensor([action], dtype=tf.float32)
+            
+            feature_next_s, pred_feature_next_s, _ = self.icm((state, next_state, action))
+
+            reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s))), 0, 5)
+        
+        elif self.extension_name == 'RND':
+            next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
+            
+            target_value = self.rnd_target(next_state)
+            predict_value = self.rnd_predict(next_state)
+
+            reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(predict_value, target_value))), 0, 5)
+
+        elif self.extension_name == 'NGU':
+            pass
+
+        return reward_int.numpy()
+
     def update_target(self):
         critic_main_weight = self.critic_main.get_weights()
         self.critic_target.set_weights(critic_main_weight)
 
     def update(self):
         if self.replay_buffer._len() < self.batch_size:
-            return False, 0.0, 0.0, 0.0
+            if self.extension_name == 'ICM':
+                return False, 0.0, 0.0, 0.0, 0.0, 0.0
+            elif self.extension_name == 'RND':
+                return False, 0.0, 0.0, 0.0, 0.0
+            elif self.extension_name == 'NGU':
+                return False, 0.0, 0.0, 0.0
+            else:
+                return False, 0.0, 0.0, 0.0
         if not self.update_step % self.update_freq == 0:  # only update every update_freq
             self.update_step += 1
-            return False, 0.0, 0.0, 0.0
+            if self.extension_name == 'ICM':
+                return False, 0.0, 0.0, 0.0, 0.0, 0.0
+            elif self.extension_name == 'RND':
+                return False, 0.0, 0.0, 0.0, 0.0
+            elif self.extension_name == 'NGU':
+                return False, 0.0, 0.0, 0.0
+            else:
+                return False, 0.0, 0.0, 0.0
 
         updated = True
         self.update_step += 1
@@ -212,12 +269,61 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         if self.update_step % self.target_update_freq == 0:
             self.update_target()
 
+        icm_pred_next_s_loss_val, icm_pred_a_loss = 0, 0
+        rnd_pred_loss_val = 0
+        # extensions
+        if self.extension_name == 'ICM':
+            icm_variable = self.icm.trainable_variables
+            if self.update_step % self.icm_update_freq == 0:
+                with tf.GradientTape() as tape_icm:
+                    tape_icm.watch(icm_variable)
+
+                    feature_next_s, pred_feature_next_s, pred_a = self.icm((states, next_states, actions))
+
+                    icm_pred_next_s_loss = tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s)))
+                    icm_pred_a_loss = tf.reduce_mean(tf.math.square(tf.subtract(actions, pred_a)))
+
+                    icm_pred_loss = tf.add(icm_pred_next_s_loss, icm_pred_a_loss)
+
+                    icm_pred_next_s_loss_val = icm_pred_next_s_loss.numpy()
+                    icm_pred_a_loss_val = icm_pred_a_loss.numpy()
+
+                grads_icm, _ = tf.clip_by_global_norm(tape_icm.gradient(icm_pred_loss, icm_variable), 0.5)
+                self.icm_opt.apply_gradients(zip(grads_icm, icm_variable))            
+
+        elif self.extension_name == 'RND':
+            rnd_variable = self.rnd_predict.trainable_variables
+            if self.update_step % self.rnd_update_freq == 0:
+                with tf.GradientTape() as tape_rnd:
+                    tape_rnd.watch(rnd_variable)
+            
+                    predictions = self.rnd_predict(next_states)
+                    targets = self.rnd_target(next_states)
+
+                    rnd_pred_loss = tf.reduce_mean(tf.math.square(tf.subtract(predictions, targets)))
+                    rnd_pred_loss_val = rnd_pred_loss.numpy()
+
+                grads_rnd, _ = tf.clip_by_global_norm(tape_rnd.gradient(rnd_pred_loss, rnd_variable), 0.5)
+                # grads_actor = tape_actor.gradient(actor_loss, self.actor_main.trainable_variables)        
+                self.rnd_opt.apply_gradients(zip(grads_rnd, rnd_variable))
+
+        elif self.extension_name == 'NGU':
+            pass
+
+        # PER update
         td_error_numpy = np.abs(td_error.numpy())
         if self.agent_config['use_PER']:
             for i in range(self.batch_size):
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])
 
-        return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
+        if self.extension_name == 'ICM':
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), icm_pred_next_s_loss_val, icm_pred_a_loss_val
+        elif self.extension_name == 'RND':
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), rnd_pred_loss_val
+        elif self.extension_name == 'NGU':
+            pass
+        else:
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
 
     def save_xp(self, state, next_state, reward, action, done):
         # Store transition in the replay buffer.

@@ -72,8 +72,11 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
             episode_rewards.append(reward)
 
             # Save_xp
+            reward_int = 0
             if episode_step > 2:
-                Agent.save_xp(prev_obs, obs, reward, prev_action, done)
+                if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
+                    reward_int = Agent.get_intrinsic_reward(prev_obs, obs, prev_action)
+                Agent.save_xp(prev_obs, obs, reward+reward_int, prev_action, done)
 
             prev_obs = obs
             prev_action = action
@@ -82,7 +85,11 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 done = True
                 continue
             
-            rl_logger.step_logging_tensorboard(Agent)
+            
+            if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
+                rl_logger.step_logging(Agent, reward_int)
+            else:
+                rl_logger.step_logging(Agent)
 
         env.close()
 
@@ -117,7 +124,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 1
+    agent_switch = 3
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
@@ -126,8 +133,8 @@ if __name__ == '__main__':
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-    result_path = parent_path + '/results/{env}/{agent}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string
-    data_save_path = parent_path + '\\results\\{env}\\{agent}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name']) + time_string + '\\'
+    result_path = parent_path + '/results/{env}/{agent}_{extension}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string
+    data_save_path = parent_path + '\\results\\{env}\\{agent}_{extension}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string + '\\'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)

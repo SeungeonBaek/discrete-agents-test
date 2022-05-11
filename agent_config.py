@@ -1,16 +1,16 @@
 
 # DQN
-DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99999, 'update_freq': 2, 'target_update_freq': 3,
+DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99995, 'update_freq': 2, 'target_update_freq': 3,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':True}
 
 DQN_ICM_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99999, 'update_freq': 2, 'target_update_freq': 3,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-DQN_ICM_agent_config['extension'] = {'name': 'ICM', 'use_DDQN':True}
+DQN_ICM_agent_config['extension'] = {'name': 'ICM', 'use_DDQN':True, 'icm_update_freq': 2, 'icm_lr': 0.001, 'icm_feature_dim': 128}
 
 DQN_RND_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99999, 'update_freq': 2, 'target_update_freq': 3,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':True}
+DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':True, 'rnd_update_freq': 2, 'rnd_lr': 0.001}
 
 DQN_NGU_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99999, 'update_freq': 2, 'target_update_freq': 3,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
