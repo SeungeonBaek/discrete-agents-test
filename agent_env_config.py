@@ -6,7 +6,7 @@ def env_agent_config(env_switch, agent_switch):
     elif env_switch == 2: # Todo
         env_config = {'env_name': 'coin-run', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo
-        env_config = {'env_name': 'highway-env', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
+        env_config = {'env_name': 'highway-fast-v0', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 4: # Todo
         env_config = {'env_name': 'domestic', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     else:
