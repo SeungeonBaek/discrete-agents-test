@@ -3,9 +3,9 @@ This repository is for testing RL algorithm with discrete action
 
 ------------
 # Env for algorithm test
-lunar-lander
-procgen
-highway-env
+lunar-lander  
+procgen  
+highway-env  
 
 # RL Algorithms
 ## DQN family
