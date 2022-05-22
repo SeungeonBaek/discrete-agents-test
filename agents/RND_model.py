@@ -6,8 +6,8 @@ from tensorflow.keras.layers import Dense
 class RND_target(Model):
     def __init__(self, input_size, output_size):
         super(RND_target,self).__init__()
-        self.kernel_initializer = initializers.he_normal()
-        self.kernel_regularizer = regularizers.l2(l=0.005)
+        self.kernel_initializer = initializers.orthogonal()
+        self.kernel_regularizer = regularizers.l2(l=0.001)
 
         self.target_layer1 = Dense(256, activation = 'relu' , kernel_initializer=self.kernel_initializer, kernel_regularizer=self.kernel_regularizer)
         self.target_layer2 = Dense(128, activation = 'relu' , kernel_initializer=self.kernel_initializer, kernel_regularizer=self.kernel_regularizer)
@@ -27,8 +27,8 @@ class RND_target(Model):
 class RND_predict(Model):
     def __init__(self, input_size, output_size):
         super(RND_predict,self).__init__()
-        self.kernel_initializer = initializers.he_normal()
-        self.kernel_regularizer = regularizers.l2(l=0.005)
+        self.kernel_initializer = initializers.orthogonal()
+        self.kernel_regularizer = regularizers.l2(l=0.001)
 
         self.predict_layer1 = Dense(256, activation = 'relu' , kernel_initializer=self.kernel_initializer, kernel_regularizer=self.kernel_regularizer)
         self.predict_layer2 = Dense(128, activation = 'relu' , kernel_initializer=self.kernel_initializer, kernel_regularizer=self.kernel_regularizer)

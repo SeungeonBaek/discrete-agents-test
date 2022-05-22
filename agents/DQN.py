@@ -18,21 +18,17 @@ from agents.RND_model import RND_target, RND_predict
 class Critic(Model): # Q network
     def __init__(self, act_space):
         super(Critic,self).__init__()
-        self.initializer = initializers.he_normal()
-        self.regularizer = regularizers.l2(l=0.005)
+        self.initializer = initializers.orthogonal()
+        self.regularizer = regularizers.l2(l=0.001)
         
-        self.l1 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l2 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l3 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l4 = Dense(32, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.value = Dense(act_space, activation = 'softmax')
 
     def call(self, state_action):
         l1 = self.l1(state_action)
         l2 = self.l2(l1)
-        l3 = self.l3(l2)
-        l4 = self.l4(l3)
-        value = self.value(l4)
+        value = self.value(l2)
 
         return value
 
@@ -72,6 +68,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         self.gamma = self.agent_config['gamma']
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
+        self.min_epsilon = self.agent_config['min_epsilon']
 
         self.update_step = 0
         self.update_freq = self.agent_config['update_freq']
@@ -133,6 +130,8 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         # print(f'in action, action: {np.shape(np.array(action))}')
 
         self.epsilon *= self.epsilon_decaying_rate
+        if self.epsilon < self.min_epsilon:
+            self.epsilon = self.min_epsilon
 
         return action
 
