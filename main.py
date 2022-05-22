@@ -137,7 +137,10 @@ if __name__ == '__main__':
     data_save_path = parent_path + '\\results\\{env}\\{agent}_{extension}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string + '\\'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
-    wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
+    if rl_config["wandb"]:
+        wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
+    else:
+        wandb_session = None
 
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
