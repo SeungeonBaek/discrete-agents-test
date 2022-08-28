@@ -22,8 +22,10 @@ class RLLoader():
             env = gym.make(self.env_config['env_name'])
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
-        elif self.env_config['env_name'] == 'domestic':
-            env = gym.make('nota-its-v0')
+        elif self.env_config['env_name'] == 'custom_highway-fast-v0':
+            import envs.highway_env
+
+            env = gym.make(self.env_config['env_name'])
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
 

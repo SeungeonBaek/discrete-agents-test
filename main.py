@@ -111,7 +111,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
 if __name__ == '__main__':
     """
     Env
-    1: LunarLander-v2, 2: procgen, 3: high-way
+    1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
 
     Agent
      1: DQN,     2: ICM_DQN,   3: RND_DQN,   4: NGU_DQN
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     18: REDQ,   19: ICM_REDQ, 20: RND_REDQ, 21: NGU_REDQ
     """
 
-    env_switch = 1
+    env_switch = 4
     agent_switch = 3
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
@@ -137,7 +137,11 @@ if __name__ == '__main__':
     data_save_path = parent_path + '\\results\\{env}\\{agent}_{extension}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string + '\\'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
-    wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
+    if rl_config['wandb'] == True:
+        import wandb
+        wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
+    else:
+        wandb_session = None
 
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
