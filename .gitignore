@@ -6,4 +6,3 @@
 results/
 __pycache__
 wandb/
-envs/
