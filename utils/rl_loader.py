@@ -16,16 +16,16 @@ class RLLoader():
             env = ProcgenEnv(num_envs=1, env_name="coinrun")
             obs_space = env.observation_space['rgb'].shape
             act_space = env.action_space.n
-        elif self.env_config['env_name'] == 'highway-fast-v0':
+        elif self.env_config['env_name'] == 'highway-v0':
             import highway_env
 
             env = gym.make(self.env_config['env_name'])
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
-        elif self.env_config['env_name'] == 'custom_highway-fast-v0':
+        elif self.env_config['env_name'] == 'custom_highway-v0':
             import envs.highway_env
 
-            env = gym.make(self.env_config['env_name'])
+            env = gym.make(self.env_config['env_name'].split('_')[1])
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
 

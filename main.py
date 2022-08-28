@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pprint import pprint
 from typing import Dict
 
 import numpy as np
@@ -79,6 +80,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 Agent.save_xp(prev_obs, obs, reward+reward_int, prev_action, done)
 
             prev_obs = obs
+            pprint(f"prev_obs:{prev_obs}")
             prev_action = action
 
             if episode_step >= env_config['max_step']:

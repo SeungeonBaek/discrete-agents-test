@@ -8,7 +8,7 @@ def env_agent_config(env_switch, agent_switch):
     elif env_switch == 3: # Todo
         env_config = {'env_name': 'highway-v0', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 4: # Todo
-        env_config = {'env_name': 'custom_highway-v0', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501, 'render_mode': 'human'}
+        env_config = {'env_name': 'custom_highway-v0', 'seed': 777, 'render': True, 'max_step': 1000, 'max_episode': 501, 'render_mode': 'human'}
         env_config['config'] = {"observation": { "type": "Kinematics"},
                                 "action": { "type": "DiscreteMetaAction",},
                                 "lanes_count": 5,
