@@ -6,6 +6,7 @@ from typing import Dict
 import numpy as np
 
 import pandas as pd
+import time
 
 from tensorboardX import SummaryWriter
 import wandb
@@ -19,6 +20,8 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
+    
+    print(f"config: {env.config}")
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -63,7 +66,9 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
 
             action = Agent.action(obs)
             
-            obs, reward, done, _ = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+
             obs = np.array(obs)
             obs = obs.reshape(-1)
 
@@ -92,6 +97,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 rl_logger.step_logging(Agent, reward_int)
             else:
                 rl_logger.step_logging(Agent)
+            time.sleep(1)
 
         env.close()
 
@@ -126,7 +132,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 3
+    agent_switch = 1
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 

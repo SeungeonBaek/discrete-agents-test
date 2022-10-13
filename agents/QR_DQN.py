@@ -34,6 +34,36 @@ class Critic(Model): # Q network
         return value
 
 
+class DistCritic(Model): # Distributional Q net
+    def __init__(self,
+                 quantile_num,
+                 obs_space,
+                 action_space):
+        super(DistCritic,self).__init__()
+        self.quantile_num = quantile_num
+
+        self.obs_space = obs_space
+        self.action_space = action_space
+
+        self.initializer = initializers.he_normal()
+        self.regularizer = regularizers.l2(l=0.001)
+        
+        self.l1 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l3 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l4 = Dense(32, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.value = Dense(self.action_space, activation = None)
+
+    def call(self, state_action):
+        l1 = self.l1(state_action) # 확인
+        l2 = self.l2(l1)
+        l3 = self.l3(l2)
+        l4 = self.l4(l3)
+        value = self.value(l4)
+
+        return value
+
+
 class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하는 녀석이다!
     """
     input argument: agent_config, obs_shape_n, act_shape_n

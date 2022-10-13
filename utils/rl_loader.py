@@ -8,7 +8,7 @@ class RLLoader():
 
     def env_loader(self):
         if self.env_config['env_name'] == 'LunarLander-v2':
-            env = gym.make(self.env_config['env_name'])
+            env = gym.make(self.env_config['env_name'], render_mode='human')
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
         elif self.env_config['env_name'] == 'coin-run':
@@ -26,6 +26,7 @@ class RLLoader():
             import envs.highway_env
 
             env = gym.make(self.env_config['env_name'].split('_')[1])
+            env.config = self.env_config['config']
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
 
