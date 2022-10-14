@@ -45,8 +45,8 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
                         'name', 'use_DDQN'
                     }
                 }
-        obs_shape_n: shpae of observation
-        act_shape_n: shape of action
+        obs_space: shpae of observation
+        act_space: shape of action
 
     Methods:
         action: return the action which is mapped with obs in policy
@@ -57,12 +57,12 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         save_models: save weights
     
     """
-    def __init__(self, agent_config, obs_shape_n, act_shape_n):
+    def __init__(self, agent_config, obs_space, act_space):
         self.agent_config = agent_config
         self.name = self.agent_config['agent_name']
 
-        self.obs_space = obs_shape_n
-        self.act_space = act_shape_n
+        self.obs_space = obs_space
+        self.act_space = act_space
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']

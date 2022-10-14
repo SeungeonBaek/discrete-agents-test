@@ -24,8 +24,8 @@ class Critic(Model): # Q network
         self.l4 = Dense(32, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.value = Dense(act_size, activation = 'softmax')
 
-    def call(self, state_action):
-        l1 = self.l1(state_action) # 확인
+    def call(self, state):
+        l1 = self.l1(state) # 확인
         l2 = self.l2(l1)
         l3 = self.l3(l2)
         l4 = self.l4(l3)
@@ -48,18 +48,19 @@ class DistCritic(Model): # Distributional Q net
         self.initializer = initializers.he_normal()
         self.regularizer = regularizers.l2(l=0.001)
         
-        self.l1 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l2 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l3 = Dense(64, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l4 = Dense(32, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.value = Dense(self.action_space, activation = None)
+        self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l3 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l4 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.value = Dense(self.action_space * self.quantile_num, activation = None)
 
-    def call(self, state_action):
-        l1 = self.l1(state_action) # 확인
+    def call(self, state):
+        l1 = self.l1(state) # 확인
         l2 = self.l2(l1)
         l3 = self.l3(l2)
         l4 = self.l4(l3)
         value = self.value(l4)
+        value = tf.reshape(value, shape=(state.shape[0], self.action_space, self.quantile_num))
 
         return value
 
@@ -70,33 +71,67 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
     agent_config: lr_critic_main, gamma, update_freq, batch_size, warm_up
     """
-    def __init__(self, agent_config, obs_shape_n, act_shape_n):
-        self.name = agent_config['agent_name']
-        self.critic_lr_main = agent_config['lr_critic']
+    def __init__(self, agent_config, obs_space, act_space):
+        self.agent_config = agent_config
+        self.name = self.agent_config['agent_name']
 
-        self.gamma = agent_config['gamma']
-        self.epsilon = agent_config['epsilon']
-        self.epsilon_decaying_rate = agent_config['epsilon_decaying_rate']
+        self.obs_space = obs_space
+        self.act_space = act_space
+        print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
-        self.update_freq = agent_config['update_freq']
+        self.critic_lr_main = self.agent_config['lr_critic']
+
+        self.gamma = self.agent_config['gamma']
+        self.tau = self.agent_config['tau']
+        self.quantile_num = self.agent_config['quantile_num']
+
+        self.update_step = 0
+        self.update_freq = self.agent_config['update_freq']
         self.target_update_freq = agent_config['target_update_freq']
 
-        self.replay_buffer = ExperienceMemory(agent_config['buffer_size'])
-        self.batch_size = agent_config['batch_size']
-        self.warm_up = agent_config['warm_up']
-        self.update_step = 0
+        if self.agent_config['use_PER']:
+            self.replay_buffer = PrioritizedMemory(self.agent_config['buffer_size'])
+        else:
+            self.replay_buffer = ExperienceMemory(self.agent_config['buffer_size'])
+        self.batch_size = self.agent_config['batch_size']
+        self.warm_up = self.agent_config['warm_up']
 
-        self.obs_size = obs_shape_n
-        self.act_size = act_shape_n
-        print('obs_size: {}, act_size: {}'.format(self.obs_size, self.act_size))
+        self.epsilon = self.agent_config['epsilon']
+        self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
 
-        self.critic_main = Critic(self.act_size)
-        self.critic_target = Critic(self.act_size)
+        # network config
+        self.critic_lr_main = self.agent_config['lr_critic']
+
+        self.critic_main = DistCritic(self.quantile_num, self.obs_space, self.act_size)
+        self.critic_target = DistCritic(self.quantile_num, self.obs_space, self.act_size)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)
 
-    def action(self, obs):
+        # extension config
+        self.extension_config = self.agent_config['extension']
+        self.extension_name = self.extension_config['name']
+
+        if self.extension_name == 'ICM':
+            self.icm_update_freq = self.extension_config['icm_update_freq']
+
+            self.icm_lr = self.extension_config['icm_lr']
+            self.icm_feature_dim = self.extension_config['icm_feature_dim']
+            self.icm = ICM_model(self.obs_space, self.act_space, self.icm_feature_dim)
+            self.icm_opt = Adam(self.icm_lr)
+
+        elif self.extension_name == 'RND':
+            self.rnd_update_freq = self.extension_config['rnd_update_freq']
+
+            self.rnd_lr = self.extension_config['rnd_lr']
+            self.rnd_target = RND_target(self.obs_space, self.act_space)
+            self.rnd_predict = RND_predict(self.obs_space, self.act_space)
+            self.rnd_opt = Adam(self.rnd_lr)
+
+        elif self.extension_name == 'NGU':
+            self.icm_lr = self.extension_config['icm_lr']
+
+    def action(self, obs): # Todo
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         values = self.critic_main(obs)
@@ -120,7 +155,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         critic_main_weight = self.critic_main.get_weights()
         self.critic_target.set_weights(critic_main_weight)
 
-    def update(self, steps):
+    def update(self, steps): # Todo
         if self.replay_buffer._len() < self.batch_size:
             return False, 0.0, 0.0, 0.0
         if not steps % self.update_freq == 0:  # only update every update_freq
