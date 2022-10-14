@@ -70,7 +70,10 @@ class Agent:
         obs_space: shape of observation
         act_space: shape of action
         gamma: discount rate
+        tau: polyak update parameter
+
         quantile_num: number of quantiles for distributional critic
+        tau_hat: quantile values
 
         epsilon: exploration related hyperparam
         epsilon_decaying_rate: decaying rate of epsilon
@@ -84,10 +87,10 @@ class Agent:
         batch_size: mini-batch size
         warm_up: number of warm_up step that uses pure action
 
-        critic_lr_main: learning rate of main critic
-        critic_main: main critic network
-        critic_target: target critic network
-        critic_opt_main: optimizer of main critic network
+        critic_lr_main: learning rate of main distributional critic network
+        critic_main: main distributional critic network
+        critic_target: target distributional critic network
+        critic_opt_main: optimizer of main distributional critic network
 
         # extension properties
         extension_config: configuration of extention algorithm
@@ -110,7 +113,7 @@ class Agent:
             rnd_opt: optimizer for predict network of rnd
 
             # ngu: never give up!
-            Todo
+            Todo: Implementation
 
     Methods:
         action: return the action which is mapped with obs in policy
@@ -134,7 +137,10 @@ class Agent:
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']
+        self.tau = self.agent_config.get('tau', None)
+
         self.quantile_num = self.agent_config['quantile_num']
+        self.tau_hat = np.array([(2*(i-1) + 1) / (2 * self.quantile_num) for i in range(1, self.quantile_num + 1)], dtype=np.float32)
 
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
@@ -183,7 +189,7 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray)-> NDArray: # Todo
+    def action(self, obs: NDArray)-> NDArray: # Todo: check!
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         value_dist = self.critic_main(obs)
@@ -192,7 +198,7 @@ class Agent:
         random_val = np.random.rand()
         if self.update_step > self.warm_up:
             if random_val > self.epsilon:
-                mean_value = np.mean(value_dist.numpy(), axis=1) # Todo: CVaR
+                mean_value = np.mean(value_dist.numpy(), axis=1) # Todo: CVaR Implementation
                 action = np.argmax(mean_value)
             else:
                 action = np.random.randint(self.act_space)
@@ -233,8 +239,16 @@ class Agent:
         return reward_int
 
     def update_target(self)-> None:
-        critic_main_weight = self.critic_main.get_weights()
-        self.critic_target.set_weights(critic_main_weight)
+        if self.tau == None:
+            critic_main_weight = self.critic_main.get_weights()
+            self.critic_target.set_weights(critic_main_weight)
+        else:
+            critic_weithgs = []
+            critic_targets = self.critic_target.get_weights()
+            
+            for idx, weight in enumerate(self.critic_main.get_weights()):
+                critic_weithgs.append(weight * self.tau + critic_targets[idx] * (1 - self.tau))
+            self.critic_target.set_weights(critic_weithgs)
 
     def update(self)-> None:
         if self.replay_buffer._len() < self.batch_size:
@@ -276,27 +290,41 @@ class Agent:
             rewards = tf.convert_to_tensor(rewards, dtype = tf.float32)
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
-        
+
+        # print(f'in update, states: {states.shape}')
+        # print(f'in update, next_states: {next_states.shape}')
+        # print(f'in update, actions: {actions.shape}')
+        # print(f'in update, rewards: {rewards.shape}')
+
         critic_variable = self.critic_main.trainable_variables
-        with tf.GradientTape() as tape_critic:  # Todo
+        with tf.GradientTape() as tape_critic:  # Todo backpropagation related code
             tape_critic.watch(critic_variable)
-            # print(f'in update, states: {states.shape}')
-            # print(f'in update, next_states: {next_states.shape}')
-            # print(f'in update, actions: {actions.shape}')
-            # print(f'in update, rewards: {rewards.shape}')
             
-            target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
+            # value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num))
+            # return value_dist
+
+            # value_dist = self.critic_main(obs)
+            # # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
+
+            # random_val = np.random.rand()
+            # if self.update_step > self.warm_up:
+            #     if random_val > self.epsilon:
+            #         mean_value = np.mean(value_dist.numpy(), axis=1) # Todo: CVaR Implementation
+
+            target_q_dists = self.critic_target(next_states)
+            # print(f'in update, target_value_dist: {target_value_dist.shape}')
+            indices = tf.stack([range(self.batch_size), tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
+            # print(f'in update, target_value_dist: {target_value_dist.shape}')
+            target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=indices)
+
+            target_q_dist = tf.expand_dims(rewards, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(dones, dtype=tf.float32)), axis=1)
+            target_q_dist = tf.stop_gradient(target_q_dist)
             # print(f'in update, target_q_next: {target_q_next.shape}')
 
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            # print(f'in update, target_q_next: {target_q_next.shape}')
+            current_q_dists = self.critic_main(states)
+            # print(f'in update, current_q_dists: {current_q_dists.shape}')
 
-            current_q = self.critic_main(states)
-            # print(f'in update, current_q: {current_q.shape}')
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            # print(f'in update, action_one_hot: {action_one_hot.shape}')
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
-            # print(f'in update, current_q: {current_q.shape}')
+            current_q_dist = tf.gather_nd(params=current_q_dists, indices=tf.stack([range(self.batch_size), tf.cast(actions, tf.int32)], axis=1))
         
             critic_loss = tf.keras.losses.MSE(target_q, current_q)
             # print(f'in update, critic_loss: {critic_loss.shape}')
@@ -312,7 +340,63 @@ class Agent:
         if self.update_step % self.target_update_freq == 0:
             self.update_target()
 
-        return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
+        icm_pred_next_s_loss_val, icm_pred_a_loss = 0, 0
+        rnd_pred_loss_val = 0
+        
+        # extensions
+        if self.extension_name == 'ICM':
+            if self.update_step % self.icm_update_freq == 0:
+                icm_variable = self.icm.trainable_variables
+                with tf.GradientTape() as tape_icm:
+                    tape_icm.watch(icm_variable)
+
+                    feature_next_s, pred_feature_next_s, pred_a = self.icm((states, next_states, actions))
+
+                    icm_pred_next_s_loss = tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s)))
+                    icm_pred_a_loss = tf.reduce_mean(tf.math.square(tf.subtract(actions, pred_a)))
+
+                    icm_pred_loss = tf.add(icm_pred_next_s_loss, icm_pred_a_loss)
+
+                grads_icm, _ = tf.clip_by_global_norm(tape_icm.gradient(icm_pred_loss, icm_variable), 0.5)
+                self.icm_opt.apply_gradients(zip(grads_icm, icm_variable))            
+
+                icm_pred_next_s_loss_val = icm_pred_next_s_loss.numpy()
+                icm_pred_a_loss_val = icm_pred_a_loss.numpy()
+
+        elif self.extension_name == 'RND':
+            if self.update_step % self.rnd_update_freq == 0:
+                rnd_variable = self.rnd_predict.trainable_variables
+                with tf.GradientTape() as tape_rnd:
+                    tape_rnd.watch(rnd_variable)
+            
+                    predictions = self.rnd_predict(next_states)
+                    targets = self.rnd_target(next_states)
+
+                    rnd_pred_loss = tf.reduce_mean(tf.math.square(tf.subtract(predictions, targets)))
+
+                grads_rnd, _ = tf.clip_by_global_norm(tape_rnd.gradient(rnd_pred_loss, rnd_variable), 0.5)
+                self.rnd_opt.apply_gradients(zip(grads_rnd, rnd_variable))
+
+                rnd_pred_loss_val = rnd_pred_loss.numpy()
+
+
+        elif self.extension_name == 'NGU':
+            pass
+
+        # PER update
+        td_error_numpy = np.abs(td_error.numpy())
+        if self.agent_config['use_PER']:
+            for i in range(self.batch_size):
+                self.replay_buffer.update(idxs[i], td_error_numpy[i])
+
+        if self.extension_name == 'ICM':
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), icm_pred_next_s_loss_val, icm_pred_a_loss_val
+        elif self.extension_name == 'RND':
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), rnd_pred_loss_val
+        elif self.extension_name == 'NGU':
+            pass
+        else:
+            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
 
     def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.

@@ -97,7 +97,7 @@ class Agent:
             rnd_opt: optimizer for predict network of rnd
 
             # ngu: never give up!
-            Todo
+            Todo: Implementation
 
     Methods:
         action: return the action which is mapped with obs in policy
@@ -121,7 +121,8 @@ class Agent:
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']
-        
+        self.tau = self.agent_config.get('tau', None)
+
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
         self.min_epsilon = self.agent_config['min_epsilon']
@@ -218,8 +219,16 @@ class Agent:
         return reward_int
 
     def update_target(self)-> None:
-        critic_main_weight = self.critic_main.get_weights()
-        self.critic_target.set_weights(critic_main_weight)
+        if self.tau == None:
+            critic_main_weight = self.critic_main.get_weights()
+            self.critic_target.set_weights(critic_main_weight)
+        else:
+            critic_weithgs = []
+            critic_targets = self.critic_target.get_weights()
+            
+            for idx, weight in enumerate(self.critic_main.get_weights()):
+                critic_weithgs.append(weight * self.tau + critic_targets[idx] * (1 - self.tau))
+            self.critic_target.set_weights(critic_weithgs)
 
     def update(self)-> None:
         if self.replay_buffer._len() < self.batch_size:
