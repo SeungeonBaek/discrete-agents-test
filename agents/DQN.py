@@ -52,51 +52,52 @@ class Agent:
         obs_space: shpae of observation
         act_space: shape of action
 
-    Properties: Todo
-        agent_config: asdf
-        name: asdf
-        obs_space: asdf
-        act_space: asdf
-        gamma: asdf
+    Properties:
+        agent_config: agent configuration
+        name: agent name
+        obs_space: shape of observation
+        act_space: shape of action
+        gamma: discount rate
 
-        epsilon: asdf
-        epsilon_decaying_rate: asdf
-        min_epsilon: asdf
+        epsilon: exploration related hyperparam
+        epsilon_decaying_rate: decaying rate of epsilon
+        min_epsilon: minimum epsilon(lower bound)
 
-        update_step: asdf
-        update_freq: asdf
-        target_update_freq: asdf
+        update_step: current update step for logging
+        update_freq: critic updqte freqeuency per env step
+        target_update_freq: target network update freqency per update freqency
 
-        replay_buffer: asdf
-        batch_size: asdf
-        warm_up: asdf
+        replay_buffer: replay buffer which store transition sample (s, a, r, s', d)
+        batch_size: mini-batch size
+        warm_up: number of warm_up step that uses pure action
 
-        critic_lr_main: asdf
-        critic_target: asdf
-        critic_opt_main: asdf
+        critic_lr_main: learning rate of main critic network
+        critic_main: main critic network
+        critic_target: target critic network
+        critic_opt_main: optimizer of main critic network
 
         # extension properties
-        extension_config: asdf
-        extension_name: asdf
+        extension_config: configuration of extention algorithm
+        extension_name: name of extention algorithm
             
-            # icm
-            icm_update_freq: asdf
-            icm_lr: asdf
-            icm_feqture_dim: asdf
+            # icm - intrinsic curiosity model
+            icm_update_freq: update freqency per step for icm model update
+            icm_lr: learning rate of icm
+            icm_feqture_dim: feature dimension of icm
 
-            icm: asdf
-            icm_opt: asdf
+            icm: icm network
+            icm_opt: optimizer of icm network
 
-            # rnd
-            rnd_update_freq: asdf
-            rnd_lr: asdf
+            # rnd: random network distillation
+            rnd_update_freq: update freqency per step for rnd model update
+            rnd_lr: learning rate of rnd
             
-            rnd_target: asdf
-            rnd_predict: asdf
-            rnd_opt: asdf
+            rnd_target: target network of rnd
+            rnd_predict: predict network of rnd
+            rnd_opt: optimizer for predict network of rnd
 
-            # ngu
-            None (Todo)
+            # ngu: never give up!
+            Todo
 
     Methods:
         action: return the action which is mapped with obs in policy
@@ -120,6 +121,7 @@ class Agent:
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']
+        
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
         self.min_epsilon = self.agent_config['min_epsilon']
