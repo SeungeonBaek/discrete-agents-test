@@ -1,3 +1,6 @@
+from typing import Dict, Union, Any
+from numpy.typing import NDArray
+
 import tensorflow as tf
 import numpy as np
 import tensorflow_probability as tfp
@@ -16,7 +19,8 @@ from agents.RND_model import RND_target, RND_predict
 
 
 class Critic(Model): # Q network
-    def __init__(self, act_space):
+    def __init__(self,
+                 act_space: int)-> None:
         super(Critic,self).__init__()
         self.initializer = initializers.orthogonal()
         self.regularizer = regularizers.l2(l=0.001)
@@ -25,7 +29,7 @@ class Critic(Model): # Q network
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.value = Dense(act_space, activation = 'None')
 
-    def call(self, state):
+    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         l1 = self.l1(state)
         l2 = self.l2(l1)
         value = self.value(l2)
@@ -33,7 +37,7 @@ class Critic(Model): # Q network
         return value
 
 
-class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하는 녀석이다!
+class Agent:
     """
     Argument:
         agent_config: agent configuration which is realted with RL algorithm => DQN
@@ -48,8 +52,55 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         obs_space: shpae of observation
         act_space: shape of action
 
+    Properties: Todo
+        agent_config: asdf
+        name: asdf
+        obs_space: asdf
+        act_space: asdf
+        gamma: asdf
+
+        epsilon: asdf
+        epsilon_decaying_rate: asdf
+        min_epsilon: asdf
+
+        update_step: asdf
+        update_freq: asdf
+        target_update_freq: asdf
+
+        replay_buffer: asdf
+        batch_size: asdf
+        warm_up: asdf
+
+        critic_lr_main: asdf
+        critic_target: asdf
+        critic_opt_main: asdf
+
+        # extension properties
+        extension_config: asdf
+        extension_name: asdf
+            
+            # icm
+            icm_update_freq: asdf
+            icm_lr: asdf
+            icm_feqture_dim: asdf
+
+            icm: asdf
+            icm_opt: asdf
+
+            # rnd
+            rnd_update_freq: asdf
+            rnd_lr: asdf
+            
+            rnd_target: asdf
+            rnd_predict: asdf
+            rnd_opt: asdf
+
+            # ngu
+            None (Todo)
+
     Methods:
         action: return the action which is mapped with obs in policy
+        get_intrinsic_reward: return the intrinsic reward
         update_target: update target critic network at user-specified frequency
         update: update main critic network
         save_xp: save transition(s, a, r, s', d) in experience memory
@@ -57,7 +108,10 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         save_models: save weights
     
     """
-    def __init__(self, agent_config, obs_space, act_space):
+    def __init__(self,
+                 agent_config: Dict,
+                 obs_space: int,
+                 act_space: int)-> None:
         self.agent_config = agent_config
         self.name = self.agent_config['agent_name']
 
@@ -111,9 +165,9 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
             self.rnd_opt = Adam(self.rnd_lr)
 
         elif self.extension_name == 'NGU':
-            self.icm_lr = self.extension_config['icm_lr']
+            self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs):
+    def action(self, obs: NDArray)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         values = self.critic_main(obs)
@@ -135,7 +189,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
         return action
 
-    def get_intrinsic_reward(self, state, next_state, action):
+    def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0
         if self.extension_name == 'ICM':
             state = tf.convert_to_tensor([state], dtype=tf.float32)
@@ -161,11 +215,11 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
         return reward_int
 
-    def update_target(self):
+    def update_target(self)-> None:
         critic_main_weight = self.critic_main.get_weights()
         self.critic_target.set_weights(critic_main_weight)
 
-    def update(self):
+    def update(self)-> None:
         if self.replay_buffer._len() < self.batch_size:
             if self.extension_name == 'ICM':
                 return False, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -192,12 +246,6 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
             is_weight = tf.convert_to_tensor(is_weight, dtype=tf.float32)
-            # print(f'states : {states.shape}')
-            # print(f'next_states : {next_states.shape}')
-            # print(f'rewards : {rewards.shape}')
-            # print(f'actions : {actions.shape}')
-            # print(f'dones : {dones.shape}')
-            # print(f'is_weight : {is_weight.shape}')
         
         else:
             states, next_states, rewards, actions, dones = self.replay_buffer.sample(self.batch_size)
@@ -211,10 +259,6 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
             rewards = tf.convert_to_tensor(rewards, dtype = tf.float32)
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
-            # print(f'states : {states.shape}')
-            # print(f'next_states : {next_states.shape}')
-            # print(f'rewards : {rewards.shape}')
-            # print(f'actions : {actions.shape}')
 
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
@@ -271,6 +315,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
 
         icm_pred_next_s_loss_val, icm_pred_a_loss = 0, 0
         rnd_pred_loss_val = 0
+        
         # extensions
         if self.extension_name == 'ICM':
             if self.update_step % self.icm_update_freq == 0:
@@ -326,7 +371,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         else:
             return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val)
 
-    def save_xp(self, state, next_state, reward, action, done):
+    def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.
         if self.agent_config['use_PER']:
             state_tf = tf.convert_to_tensor([state], dtype = tf.float32)
@@ -373,13 +418,13 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         else:
             self.replay_buffer.add((state, next_state, reward, action, done))
 
-    def load_models(self, path):
+    def load_models(self, path: str)-> None:
         print('Load Model Path : ', path)
         self.critic_main.load_weights(path, "_critic_main")
         self.critic_target.load_weights(path, "_critic_target")
 
-    def save_models(self, path, score):
-        save_path = str(path) + "score_" + str(score) + "_model"
+    def save_models(self, path: str, score: float)-> None:
+        save_path = path + "score_" + str(score) + "_model"
         print('Save Model Path : ', save_path)
         self.critic_main.save_weights(save_path, "_critic_main")
         self.critic_target.save_weights(save_path, "_critic_target")
