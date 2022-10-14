@@ -1,6 +1,8 @@
 # Hi!
 This repository is for testing RL algorithm with discrete action
 
+(not finished!)  
+
 ------------
 # Env for algorithm test
 lunar-lander  
@@ -15,7 +17,7 @@ RAINBOW_DQN (...working)
 REDQ (...working)  
 
 ## distributional DQN
-QR_DQN (...working)  
+QR_DQN  
 QUOTA (...working)  
 IQN (...working)  
 
@@ -35,5 +37,5 @@ TQC(for SAC) (...working)
 
 ------------
 # Maintainers
-discrete-agents-test is currently maintained by SeungeonBaek, Jeongmin Do  
+discrete-agents-test is currently maintained by SeungeonBaek, Jeongmin Do, Jaeun Ryu  
 Important Note: We do not do technical support, nor consulting and don't answer personal questions per email.  
