@@ -1,6 +1,6 @@
 import typing
 from typing import Tuple
-from nptyping import NDArray
+from numpy.typing import NDArray
 import random
 import numpy as np
 from .sum_tree import SumTree

@@ -1,8 +1,8 @@
 # files
+__pycache__
 
 # directory
 10-gSDE/
 11-Neural_CO_with_RL/
 results/
-__pycache__
 wandb/

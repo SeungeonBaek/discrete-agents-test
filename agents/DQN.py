@@ -127,6 +127,7 @@ class Agent:
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
         self.min_epsilon = self.agent_config['min_epsilon']
 
+        self.update_call_step = 0
         self.update_step = 0
         self.update_freq = self.agent_config['update_freq']
         self.target_update_freq = self.agent_config['target_update_freq']
@@ -231,7 +232,9 @@ class Agent:
             self.critic_target.set_weights(critic_weithgs)
 
     def update(self)-> None:
-        if self.replay_buffer._len() < self.batch_size:
+        self.update_call_step += 1
+
+        if (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
             if self.extension_name == 'ICM':
                 return False, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'RND':
@@ -303,10 +306,10 @@ class Agent:
 
             critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
                                 lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.multiply(is_weight, tf.where(tf.less(td_error, 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error - 1.0 * 1/2))), \
+                                    lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
                                     lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
                                 lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.where(tf.less(td_error, 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error - 1.0 * 1/2)), \
+                                    lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
                                     lambda: tf.math.square(td_error)))
             # print(f'in update, critic_losses : {critic_losses.shape}')
             

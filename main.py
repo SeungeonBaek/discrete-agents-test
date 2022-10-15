@@ -45,6 +45,8 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
         episode_data['mean_reward']   = np.zeros(env_config['max_episode'], dtype=np.float32)
         episode_data['episode_step']  = np.zeros(env_config['max_episode'], dtype=np.float32)
 
+    total_step = 0
+
     for episode_num in range(1, env_config['max_episode']):
         episode_score = 0
         episode_step = 0
@@ -97,12 +99,12 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 done = True
                 continue
             
-            
+            print(f"total_step: {total_step}")
+            print(f"update_step: {Agent.update_step}")
             if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
                 rl_logger.step_logging(Agent, reward_int)
             else:
                 rl_logger.step_logging(Agent)
-            time.sleep(1)
 
         env.close()
 
@@ -138,7 +140,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 1
+    agent_switch = 9
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
