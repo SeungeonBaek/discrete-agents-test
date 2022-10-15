@@ -21,6 +21,7 @@ class RLLogger():
             self.episode_logging_wandb(*args)
 
     def step_logging_tensorboard(self, Agent, reward_int = None):
+        # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
                 updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
@@ -44,14 +45,20 @@ class RLLogger():
                 updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
 
         elif self.agent_config['agent_name'] == 'QR_DQN':
-            if self.agent_config['extension']['name'] == 'IQN':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
-            elif self.agent_config['extension']['name'] == 'QUOTA':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
-            elif self.agent_config['extension']['name'] == 'IDAC':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            if Agent.extension_name == 'ICM':
+                updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
+            elif Agent.extension_name == 'RND':
+                updated, critic_loss, trgt_q_mean, critic_value, rnd_pred_loss = Agent.update()
+            elif Agent.extension_name == 'NGU':
+                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+
+        elif self.agent_config['extension']['name'] == 'IQN':
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+
+        elif self.agent_config['extension']['name'] == 'QUOTA':
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
 
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if self.agent_config['extension']['name'] == 'ICM':
@@ -76,6 +83,7 @@ class RLLogger():
             else:
                 updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
 
+        # Logging
         if self.agent_config['agent_name'] == 'DQN':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
@@ -90,54 +98,64 @@ class RLLogger():
                     self.summary_writer.add_scalar('03_RND/RND_pred_loss', rnd_pred_loss, Agent.update_step)
                 elif Agent.extension_name == 'NGU':
                     pass
+
         elif self.agent_config['agent_name'] == 'PPO':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'SAC':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'QR_DQN':
             if updated:
-                self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
-                self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
+                self.summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+                if Agent.extension_name == 'ICM':
+                    self.summary_writer.add_scalar('03_ICM/intrinsic_reward', reward_int, Agent.update_step)
+                    self.summary_writer.add_scalar('03_ICM/ICM_state_loss', icm_state_loss, Agent.update_step)
+                    self.summary_writer.add_scalar('03_ICM/ICM_action_loss', icm_action_loss, Agent.update_step)
+                elif Agent.extension_name == 'RND':
+                    self.summary_writer.add_scalar('03_RND/intrinsic_reward', reward_int, Agent.update_step)
+                    self.summary_writer.add_scalar('03_RND/RND_pred_loss', rnd_pred_loss, Agent.update_step)
+                elif Agent.extension_name == 'NGU':
+                    pass
+
         elif self.agent_config['agent_name'] == 'IQN':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'QUOTA':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
-        elif self.agent_config['agent_name'] == 'IDAC':
-            if updated:
-                self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
-                self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
-                self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'Agent57':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Actor_loss', actor_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'REDQ':
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_1_loss', critic_loss, Agent.update_step)
@@ -147,6 +165,7 @@ class RLLogger():
 
 
     def step_logging_wandb(self, Agent, reward_int):
+        # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
                 updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
@@ -170,14 +189,20 @@ class RLLogger():
                 updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
 
         elif self.agent_config['agent_name'] == 'QR_DQN':
-            if self.agent_config['extension']['name'] == 'IQN':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
-            elif self.agent_config['extension']['name'] == 'QUOTA':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
-            elif self.agent_config['extension']['name'] == 'IDAC':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            if Agent.extension_name == 'ICM':
+                updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
+            elif Agent.extension_name == 'RND':
+                updated, critic_loss, trgt_q_mean, critic_value, rnd_pred_loss = Agent.update()
+            elif Agent.extension_name == 'NGU':
+                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+
+        elif self.agent_config['extension']['name'] == 'IQN':
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+
+        elif self.agent_config['extension']['name'] == 'QUOTA':
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
 
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if self.agent_config['extension']['name'] == 'ICM':
@@ -202,6 +227,7 @@ class RLLogger():
             else:
                 updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
 
+        # Logging
         if self.agent_config['agent_name'] == 'DQN':
             if updated:
                 self.wandb_session.log({
@@ -222,6 +248,7 @@ class RLLogger():
                     }, step=Agent.update_step)
                 elif Agent.extension_name == 'NGU':
                     pass
+
         elif self.agent_config['agent_name'] == 'PPO':
             if updated:
                 self.wandb_session.log({
@@ -239,10 +266,24 @@ class RLLogger():
         elif self.agent_config['agent_name'] == 'QR_DQN':
             if updated:
                 self.wandb_session.log({
-                    "01_Loss/Critic_1_loss": critic_loss,
+                    "01_Loss/Critic_loss": critic_loss,
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
+                if Agent.extension_name == 'ICM':
+                    self.wandb_session.log({
+                        "03_ICM/Intrinsic_reward": reward_int,
+                        '03_ICM/ICM_state_loss': icm_state_loss, 
+                        '03_ICM/ICM_action_loss': icm_action_loss
+                    }, step=Agent.update_step)
+                elif Agent.extension_name == 'RND':
+                    self.wandb_session.log({
+                        "03_RND/Intrinsic_reward": reward_int,
+                        '03_RND/RND_pred_loss': rnd_pred_loss, 
+                    }, step=Agent.update_step)
+                elif Agent.extension_name == 'NGU':
+                    pass
+
         elif self.agent_config['agent_name'] == 'IQN':
             if updated:
                 self.wandb_session.log({
@@ -250,6 +291,7 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'QUOTA':
             if updated:
                 self.wandb_session.log({
@@ -257,13 +299,7 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
-        elif self.agent_config['agent_name'] == 'IDAC':
-            if updated:
-                self.wandb_session.log({
-                    "01_Loss/Critic_1_loss": critic_loss,
-                    '02_Critic/Target_Q_mean': trgt_q_mean, 
-                    '02_Critic/Critic_value': critic_value
-                }, step=Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if updated:
                 self.wandb_session.log({
@@ -271,6 +307,7 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'Agent57':
             if updated:
                 self.wandb_session.log({
@@ -278,6 +315,7 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
+
         elif self.agent_config['agent_name'] == 'REDQ':
             if updated:
                 self.wandb_session.log({
@@ -285,7 +323,6 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
-
 
     def episode_logging_tensorboard(self, Agent, episode_score, episode_step, episode_num, episode_rewards):
         if self.agent_config['agent_name'] == 'PPO':
@@ -310,7 +347,6 @@ class RLLogger():
         self.summary_writer.add_scalar('00_Episode/Steps', episode_step, episode_num)
 
         self.summary_writer.add_histogram('Reward_histogram', episode_rewards, episode_num)
-
 
     def episode_logging_wandb(self, Agent, episode_score, episode_step, episode_num, episode_rewards):
         if self.agent_config['agent_name'] == 'PPO':

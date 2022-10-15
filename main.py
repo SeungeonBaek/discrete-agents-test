@@ -66,6 +66,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
             if env_config['render']:
                 env.render()
             episode_step += 1
+            total_step += 1
 
             action = Agent.action(obs)
 
@@ -99,8 +100,6 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 done = True
                 continue
             
-            print(f"total_step: {total_step}")
-            print(f"update_step: {Agent.update_step}")
             if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
                 rl_logger.step_logging(Agent, reward_int)
             else:

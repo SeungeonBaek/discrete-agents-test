@@ -2,7 +2,7 @@
 def env_agent_config(env_switch, agent_switch):
     # Env
     if env_switch == 1:
-        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 3000}
+        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 5000}
     elif env_switch == 2: # Todo
         env_config = {'env_name': 'coin-run', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo

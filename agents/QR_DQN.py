@@ -199,13 +199,12 @@ class Agent:
         random_val = np.random.rand()
         if self.update_step > self.warm_up:
             if random_val > self.epsilon:
-                mean_value = np.mean(value_dist.numpy(), axis=1) # Todo: CVaR Implementation
+                mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
                 action = np.argmax(mean_value)
             else:
                 action = np.random.randint(self.act_space)
         else:
             action = np.random.randint(self.act_space)
-        # print(f'in action, action: {np.shape(np.array(action))}')
 
         self.epsilon *= self.epsilon_decaying_rate
         if self.epsilon < self.min_epsilon:
@@ -430,60 +429,36 @@ class Agent:
             reward_tf = tf.convert_to_tensor([reward], dtype=tf.float32)
             action_tf = tf.convert_to_tensor([action], dtype=tf.float32)
             done_tf = tf.convert_to_tensor([done], dtype=tf.bool)
-            print(f'in update, state_tf: {state_tf}')
-            print(f'in update, next_state_tf: {next_state_tf}')
-            print(f'in update, reward_tf: {reward_tf}')
-            print(f'in update, action_tf: {action_tf}')
-            print(f'in update, done_tf: {done_tf}')
             
             # target
             target_q_dists = self.critic_target(next_state_tf)
             target_indices = tf.stack([[0], tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
             target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
-            print(f'in update, target_q_dists: {target_q_dists}')
-            print(f'in update, target_indices: {target_indices}')
-            print(f'in update, target_q_dist_next: {target_q_dist_next}')
 
             target_q_dist = tf.expand_dims(reward_tf, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(done_tf, dtype=tf.float32)), axis=1)
             target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
-            print(f'in update, target_q_dist: {target_q_dist}')
-            print(f'in update, target_q_dist_tile: {target_q_dist_tile}')
 
             # current
             current_q_dists = self.critic_main(state_tf)
             current_indices = tf.stop_gradient(tf.stack([[0], tf.cast(action_tf, tf.int32)], axis=1))
             current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
-            print(f'in update, current_q_dists: {current_q_dists}')
-            print(f'in update, current_indices: {current_indices}')
-            print(f'in update, current_q_dist: {current_q_dist}')
 
             current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
-            print(f'in update, current_q_dist_tile: {current_q_dist_tile}')
 
             # loss
             td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
             huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
-            print(f'in update, td_error: {td_error}')
-            print(f'in update, huber_loss: {huber_loss}')
             
             tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
             inv_tau = 1.0 - tau
-            print(f'in update, tau: {tau}')
-            print(f'in update, inv_tau: {inv_tau}')
 
             tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
             inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
-            print(f'in update, tau_tile: {tau_tile}')
-            print(f'in update, inv_tau_tile: {inv_tau_tile}')
 
             critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau_tile, huber_loss), tf.multiply(tau_tile, huber_loss))
             critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
-            print(f'in update, critic_losses: {critic_losses}')
-            print(f'in update, critic_loss: {critic_loss}')
 
-            self.replay_buffer.add(critic_loss.numpy()[0], (state, next_state, reward, action, done))
-
-            raise RuntimeError('value check')
+            self.replay_buffer.add(critic_loss.numpy(), (state, next_state, reward, action, done))
         else:
             self.replay_buffer.add((state, next_state, reward, action, done))
 
