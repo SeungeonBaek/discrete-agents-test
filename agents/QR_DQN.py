@@ -406,7 +406,7 @@ class Agent:
             pass
 
         # PER update
-        td_error_numpy = np.abs(td_error.numpy())
+        td_error_numpy = tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1)
         if self.agent_config['use_PER']:
             for i in range(self.batch_size):
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])

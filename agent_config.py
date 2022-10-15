@@ -42,8 +42,8 @@ SAC_TQC_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_
 
 
 # QR_DQN
-QR_DQN_Vanilla_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 32, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99997, 'min_epsilon': 0.15, 'update_freq': 2, 'target_update_freq': 10,
-                        'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0008, 'buffer_size': 500000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
+QR_DQN_Vanilla_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 32, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.1, 'update_freq': 2, 'target_update_freq': 10,
+                        'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 500000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 QR_DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla'}
 QR_DQN_Vanilla_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
