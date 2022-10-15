@@ -8,7 +8,10 @@ class RLLoader():
 
     def env_loader(self):
         if self.env_config['env_name'] == 'LunarLander-v2':
-            env = gym.make(self.env_config['env_name'], render_mode='human')
+            if self.env_config['render'] == True:
+                env = gym.make(self.env_config['env_name'], render_mode='human')
+            else:
+                env = gym.make(self.env_config['env_name'], render_mode=None)
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
         elif self.env_config['env_name'] == 'coin-run':
@@ -55,8 +58,6 @@ class RLLoader():
             from agents.IQN import Agent
         elif self.agent_config['agent_name'] == 'QUOTA':
             from agents.QUOTA import Agent
-        elif self.agent_config['agent_name'] == 'IDAC':
-            from agents.IDAC import Agent
 
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             from agents.RAINBOW_DQN import Agent

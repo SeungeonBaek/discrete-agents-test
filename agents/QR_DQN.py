@@ -137,7 +137,7 @@ class Agent:
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']
-        self.tau = self.agent_config.get('tau', None)
+        self.tau = self.agent_config['tau']
 
         self.quantile_num = self.agent_config['quantile_num']
         self.tau_hat = np.array([(2*(i-1) + 1) / (2 * self.quantile_num) for i in range(1, self.quantile_num + 1)], dtype=np.float32)

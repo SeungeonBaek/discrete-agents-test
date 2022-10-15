@@ -1,7 +1,10 @@
-import os
+import os, sys
 from datetime import datetime
 from pprint import pprint
 from typing import Dict
+
+if __name__ == "__main__":
+	sys.path.append(os.getcwd())
 
 import numpy as np
 
@@ -20,8 +23,6 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
-    
-    print(f"config: {env.config}")
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -65,9 +66,13 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
             episode_step += 1
 
             action = Agent.action(obs)
-            
-            obs, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
+
+            if env_config['env_name'] == 'LunarLander-v2':
+                obs, reward, done, _ = env.step(action)
+
+            elif env_config['env_name'] == None: # Todo
+                obs, reward, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
 
             obs = np.array(obs)
             obs = obs.reshape(-1)
@@ -85,7 +90,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 Agent.save_xp(prev_obs, obs, reward+reward_int, prev_action, done)
 
             prev_obs = obs
-            pprint(f"prev_obs:{prev_obs}")
+            # pprint(f"prev_obs:{prev_obs}")
             prev_action = action
 
             if episode_step >= env_config['max_step']:
@@ -122,16 +127,17 @@ if __name__ == '__main__':
     1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
 
     Agent
-     1: DQN,     2: ICM_DQN,   3: RND_DQN,   4: NGU_DQN
+     1: DQN,     2: ICM_DQN,      3: RND_DQN,      4: NGU_DQN
      5: PPO,     6: MEPPO
      7: SAC,     8: TQC_SAC
-     9: QR_DQN, 10: IQN,      11: QUOTA,    12: IDAC
-    13: RAINBOW 14: ICM_RAINBOW, 15: RND_RAINBOW, 16: NGU_RAINBOW
-    17: Agent-57
-    18: REDQ,   19: ICM_REDQ, 20: RND_REDQ, 21: NGU_REDQ
+     9: QR_DQN, 10: ICM_QR_DQN   11: RND_QR_DQN,  12: NGU_QR_DQN
+    13: IQN,    14: QUOTA,
+    15: RAINBOW 16: ICM_RAINBOW, 17: RND_RAINBOW, 18: NGU_RAINBOW
+    19: Agent-57
+    20: REDQ,   21: ICM_REDQ,    22: RND_REDQ,    23: NGU_REDQ
     """
 
-    env_switch = 4
+    env_switch = 1
     agent_switch = 1
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)

@@ -27,7 +27,7 @@ class Critic(Model): # Q network
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.value = Dense(act_space, activation = 'None')
+        self.value = Dense(act_space, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         l1 = self.l1(state)
@@ -107,7 +107,7 @@ class Agent:
         save_xp: save transition(s, a, r, s', d) in experience memory
         load_models: load weights
         save_models: save weights
-    
+    []
     """
     def __init__(self,
                  agent_config: Dict,
@@ -121,7 +121,7 @@ class Agent:
         print(f'obs_space: {self.obs_space}, act_space: {self.act_space}')
 
         self.gamma = self.agent_config['gamma']
-        self.tau = self.agent_config.get('tau', None)
+        self.tau = self.agent_config['tau']
 
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
@@ -302,10 +302,10 @@ class Agent:
             # print(f'in update, td_error: {td_error.shape}')
 
             critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
-                                tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
                                     lambda: tf.multiply(is_weight, tf.where(tf.less(td_error, 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error - 1.0 * 1/2))), \
                                     lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
-                                tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
                                     lambda: tf.where(tf.less(td_error, 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error - 1.0 * 1/2)), \
                                     lambda: tf.math.square(td_error)))
             # print(f'in update, critic_losses : {critic_losses.shape}')

@@ -2,7 +2,7 @@
 def env_agent_config(env_switch, agent_switch):
     # Env
     if env_switch == 1:
-        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': True, 'max_step': 1000, 'max_episode': 3000}
+        env_config = {'env_name': 'LunarLander-v2', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 3000}
     elif env_switch == 2: # Todo
         env_config = {'env_name': 'coin-run', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 3: # Todo
@@ -69,50 +69,60 @@ def env_agent_config(env_switch, agent_switch):
         from agent_config import SAC_TQC_Vanilla_agent_config
         agent_config = SAC_TQC_Vanilla_agent_config
 
-    # Distributional RL
+    # QR-DQN
     elif agent_switch == 9:
         from agent_config import QR_DQN_Vanilla_agent_config
         agent_config = QR_DQN_Vanilla_agent_config
     elif agent_switch == 10:
+        from agent_config import QR_DQN_ICM_agent_config
+        agent_config = QR_DQN_ICM_agent_config
+    elif agent_switch == 11:
+        from agent_config import QR_DQN_RND_agent_config
+        agent_config = QR_DQN_RND_agent_config
+    elif agent_switch == 12:
+        from agent_config import QR_DQN_NGU_agent_config
+        agent_config = QR_DQN_NGU_agent_config
+
+    # IQN
+    elif agent_switch == 13:
         from agent_config import IQN_Vanilla_agent_config
         agent_config = IQN_Vanilla_agent_config
-    elif agent_switch == 11:
+
+    # QUOTA
+    elif agent_switch == 14:
         from agent_config import QUOTA_Vanilla_agent_config
         agent_config = QUOTA_Vanilla_agent_config
-    elif agent_switch == 12:
-        from agent_config import IDAC_Vanilla_agent_config
-        agent_config = IDAC_Vanilla_agent_config
 
     # RAINBOW DQN
-    elif agent_switch == 13:
+    elif agent_switch == 15:
         from agent_config import RAINBOW_DQN_Vanilla_agent_config
         agent_config = RAINBOW_DQN_Vanilla_agent_config
-    elif agent_switch == 14:
+    elif agent_switch == 16:
         from agent_config import RAINBOW_DQN_ICM_agent_config
         agent_config = RAINBOW_DQN_ICM_agent_config
-    elif agent_switch == 15:
+    elif agent_switch == 17:
         from agent_config import RAINBOW_DQN_RND_agent_config
         agent_config = RAINBOW_DQN_RND_agent_config
-    elif agent_switch == 16:
+    elif agent_switch == 18:
         from agent_config import RAINBOW_DQN_NGU_agent_config
         agent_config = RAINBOW_DQN_NGU_agent_config
 
     # Agent-57
-    elif agent_switch == 17:
+    elif agent_switch == 19:
         from agent_config import Agent57_agent_config
         agent_config = Agent57_agent_config
 
     # REDQ
-    elif agent_switch == 18:
+    elif agent_switch == 20:
         from agent_config import REDQ_Vanilla_agent_config
         agent_config = REDQ_Vanilla_agent_config
-    elif agent_switch == 19:
+    elif agent_switch == 21:
         from agent_config import REDQ_ICM_agent_config
         agent_config = REDQ_ICM_agent_config
-    elif agent_switch == 20:
+    elif agent_switch == 22:
         from agent_config import REDQ_RND_agent_config
         agent_config = REDQ_RND_agent_config
-    elif agent_switch == 21:
+    elif agent_switch == 23:
         from agent_config import REDQ_NGU_agent_config
         agent_config = REDQ_NGU_agent_config
 
