@@ -69,7 +69,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
 
             action = Agent.action(obs)
 
-            if env_config['env_name'] == 'LunarLander-v2':
+            if env_config['env_name'] == 'LunarLander-v2' or 'custom_highway-v0':
                 obs, reward, done, _ = env.step(action)
 
             elif env_config['env_name'] == None: # Todo
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 9
+    agent_switch = 3
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 

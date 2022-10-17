@@ -25,13 +25,13 @@ class RLLogger():
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
             else:
-                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
@@ -87,6 +87,7 @@ class RLLogger():
         # Logging
         if self.agent_config['agent_name'] == 'DQN':
             if updated:
+                self.summary_writer.add_scalar('00_Step/Epsilon', epsilon, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
@@ -170,13 +171,13 @@ class RLLogger():
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
             else:
-                updated, critic_loss, trgt_q_mean, critic_value = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
@@ -233,6 +234,7 @@ class RLLogger():
         if self.agent_config['agent_name'] == 'DQN':
             if updated:
                 self.wandb_session.log({
+                    "00_Step/Epsilon": epsilon,
                     "01_Loss/Critic_loss": critic_loss,
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value

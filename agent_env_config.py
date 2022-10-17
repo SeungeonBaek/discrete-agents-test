@@ -8,34 +8,7 @@ def env_agent_config(env_switch, agent_switch):
     elif env_switch == 3: # Todo
         env_config = {'env_name': 'highway-v0', 'seed': 777, 'render': False, 'max_step': 1000, 'max_episode': 501}
     elif env_switch == 4: # Todo
-        env_config = {'env_name': 'custom_highway-v0', 'seed': 777, 'render': True, 'max_step': 1000, 'max_episode': 501, 'render_mode': 'human'}
-        env_config['config'] = {"observation": { "type": "Kinematics"},
-                                "action": { "type": "DiscreteMetaAction",},
-                                "lanes_count": 5,
-                                "vehicles_count": 50,
-                                "duration": 40,  # [s]
-                                "initial_spacing": 2,
-                                "simulation_frequency": 15,  # [Hz]
-                                "policy_frequency": 1,  # [Hz]
-                                "other_vehicles_type": "highway_env.vehicle.behavior.IDMVehicle",
-                                "screen_width": 600,  # [px]
-                                "screen_height": 150,  # [px]
-                                "centering_position": [0.3, 0.5],
-                                "scaling": 5.5,
-                                "show_trajectories": True,
-                                "render_agent": True,
-                                "offscreen_rendering": False,
-                                "vehicles_density": 1,
-                                "collision_reward": -1,    # The reward received when colliding with a vehicle.
-                                "right_lane_reward": 0.1,  # The reward received when driving on the right-most lanes, linearly mapped to
-                                                        # zero for other lanes.
-                                "high_speed_reward": 0.4,  # The reward received when driving at full speed, linearly mapped to zero for
-                                                        # lower speeds according to config["reward_speed_range"].
-                                "lane_change_reward": 0,   # The reward received at each lane change action.
-                                "reward_speed_range": [20, 30],
-                                "normalize_reward": True,
-                                "offroad_terminal": False
-                                }
+        env_config = {'env_name': 'custom_highway-v0', 'seed': 777, 'render': True, 'max_step': 1000, 'max_episode': 50000, 'render_mode': 'human'}
     else:
         raise ValueError('Please try to correct env_switch')
 

@@ -10,8 +10,8 @@ DQN_ICM_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': None, 'epsil
 DQN_ICM_agent_config['extension'] = {'name': 'ICM', 'use_DDQN':True, 'icm_update_freq': 2, 'icm_lr': 0.001, 'icm_feature_dim': 128}
 DQN_ICM_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
-DQN_RND_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': None, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99, 'min_epsilon': 0.05, 'update_freq': 4, 'target_update_freq': 250,
-                        'batch_size': 128, 'warm_up': 512, 'lr_critic': 0.0005, 'buffer_size': 100000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False, 'use_Huber': True}
+DQN_RND_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': 0.005, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.99999, 'min_epsilon': 0.05, 'update_freq': 4, 'target_update_freq': 25,
+                        'batch_size': 128, 'warm_up': 512, 'lr_critic': 0.00025, 'buffer_size': 100000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False, 'use_Huber': True}
 DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':True, 'rnd_update_freq': 5, 'rnd_lr': 0.0005}
 DQN_RND_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
