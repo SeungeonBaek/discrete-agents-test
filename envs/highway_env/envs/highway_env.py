@@ -30,10 +30,10 @@ class HighwayEnv(AbstractEnv):
                 "type": "DiscreteMetaAction",
             },
             "lanes_count": 4,
-            "vehicles_count": 50,
+            "vehicles_count": 10000,
             "controlled_vehicles": 1,
             "initial_lane_id": None,
-            "duration": 40,  # [s]
+            "duration": 100,  # [s]
             "ego_spacing": 2,
             "vehicles_density": 1,
             "collision_reward": -1,    # The reward received when colliding with a vehicle.

@@ -1,8 +1,27 @@
+# %%
 import os
+os.system('export LD_LIBRARY_PATH="$CONDA_PREFIX/lib"')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import tensorflow as tf
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+    except RuntimeError as e:
+        print(e)
+#os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+'''gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+    except RuntimeError as e:
+        print(e)'''
+##        
 from datetime import datetime
 from pprint import pprint
 from typing import Dict
-
+import time
 import numpy as np
 
 import pandas as pd
@@ -19,6 +38,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
+    pprint(env.config)
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -28,7 +48,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
         obs_space = env_obs_space[0]
 
     act_space = env_act_space
-
+# %%
     # Agent
     RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
@@ -53,19 +73,23 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
         obs = env.reset()
         obs = np.array(obs)
         obs = obs.reshape(-1)
+        
 
         action = None
+        
 
         while not done:
             if env_config['render']:
                 env.render()
             episode_step += 1
-
-            action = Agent.action(obs)
             
+            action = Agent.action(obs)
+            #start_time = time.time()
             obs, reward, done, _ = env.step(action)
+            #print("time :", time.time() - start_time)
             obs = np.array(obs)
             obs = obs.reshape(-1)
+            #print(obs)
 
             action = np.array(action)
 
@@ -80,7 +104,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 Agent.save_xp(prev_obs, obs, reward+reward_int, prev_action, done)
 
             prev_obs = obs
-            pprint(f"prev_obs:{prev_obs}")
+            #pprint(f"prev_obs:{prev_obs}")
             prev_action = action
 
             if episode_step >= env_config['max_step']:
@@ -124,13 +148,22 @@ if __name__ == '__main__':
     17: Agent-57
     18: REDQ,   19: ICM_REDQ, 20: RND_REDQ, 21: NGU_REDQ
     """
+    os.system('export LD_LIBRARY_PATH="$CONDA_PREFIX/lib"')
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            tf.config.experimental.set_memory_growth(gpus[0], True)
+        except RuntimeError as e:
+            print(e)
 
     env_switch = 4
-    agent_switch = 3
+    agent_switch = 1
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': True}
+    rl_config = {'csv_logging': False, 'wandb': True, 'tensorboard': False}
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -141,7 +174,7 @@ if __name__ == '__main__':
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     if rl_config['wandb'] == True:
         import wandb
-        wandb_session = wandb.init(project="RL-test-2", job_type="train", name=time_string)
+        wandb_session = wandb.init(project="RL-test-3", job_type="train", name=time_string)
     else:
         wandb_session = None
 
@@ -149,3 +182,4 @@ if __name__ == '__main__':
     rl_loader = RLLoader(env_config, agent_config)
 
     main(env_config, agent_config, rl_config, data_save_path, rl_logger, rl_loader)
+# %%

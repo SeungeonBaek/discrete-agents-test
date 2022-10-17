@@ -22,7 +22,7 @@ class Vehicle(RoadObject):
     """ Vehicle length [m] """
     WIDTH = 2.0
     """ Vehicle width [m] """
-    DEFAULT_INITIAL_SPEEDS = [23, 25]
+    DEFAULT_INITIAL_SPEEDS = [5, 25]
     """ Range for random initial speeds [m/s] """
     MAX_SPEED = 40.
     """ Maximum reachable speed [m/s] """

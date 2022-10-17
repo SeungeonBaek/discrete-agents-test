@@ -26,6 +26,45 @@ class RLLoader():
             import envs.highway_env
 
             env = gym.make(self.env_config['env_name'].split('_')[1])
+            #env.reset
+            env.config['observation']['type'] = "Kinematics"
+            env.config['observation']['vehicles_count'] =5
+            env.config['observation']['features'] = ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"]
+            env.config['observation']['features_range'] = {
+                                                            "x": [-100, 100],
+                                                            "y": [-100, 100],
+                                                            "vx": [-20, 20],
+                                                            "vy": [-20, 20]
+                                                        }
+            env.config['observation']['absolute'] = False
+            env.config['observation']['order'] = "sorted"
+            env.config['action'] = { "type": "DiscreteMetaAction",}
+            env.config['lanes_count'] = 3
+            env.config['duration'] = 80
+            env.config['initial_spacing'] = 2
+            env.config['simulation_frequency'] = 15
+            env.config['policy_frequency'] = 1
+            env.config['other_vehicles_type'] = "highway_env.vehicle.behavior.IDMVehicle"
+            env.config['collision_reward'] = -2
+            env.config['reward_speed_range'] = [20,25]
+            env.config['vehicles_count'] = 10
+            env.config['scaling'] = 5.5
+            env.config['offscreen_rendering']= False
+            env.config['vehicles_density']= 0.7
+            env.config['ego_spacing']= 2
+            env.config['right_lane_reward'] = 0
+            '''env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']
+            env.config['config']'''
+            _ = env.reset()
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
 

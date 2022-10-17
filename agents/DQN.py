@@ -18,12 +18,12 @@ from agents.RND_model import RND_target, RND_predict
 class Critic(Model): # Q network
     def __init__(self, act_space):
         super(Critic,self).__init__()
-        self.initializer = initializers.orthogonal()
-        self.regularizer = regularizers.l2(l=0.001)
+        self.initializer = initializers.glorot_normal()
+        self.regularizer = regularizers.l2(l=0.0001)
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.value = Dense(act_space, activation = 'softmax')
+        self.value = Dense(act_space, activation = None)
 
     def call(self, state_action):
         l1 = self.l1(state_action)
@@ -70,6 +70,7 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
         self.min_epsilon = self.agent_config['min_epsilon']
 
+        self.update_call_step = 0
         self.update_step = 0
         self.update_freq = self.agent_config['update_freq']
         self.target_update_freq = self.agent_config['target_update_freq']
@@ -166,7 +167,8 @@ class Agent: # => Q network를 가지고 있으며, 환경과 상호작용 하�
         self.critic_target.set_weights(critic_main_weight)
 
     def update(self):
-        if self.replay_buffer._len() < self.batch_size:
+        self.update_call_step +=1
+        if (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
             if self.extension_name == 'ICM':
                 return False, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'RND':
