@@ -22,8 +22,8 @@ class Critic(Model): # Q network
     def __init__(self,
                  act_space: int)-> None:
         super(Critic,self).__init__()
-        self.initializer = initializers.orthogonal()
-        self.regularizer = regularizers.l2(l=0.001)
+        self.initializer = initializers.glorot_normal()
+        self.regularizer = regularizers.l2(l=0.0005)
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)

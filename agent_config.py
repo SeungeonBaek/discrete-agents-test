@@ -42,7 +42,7 @@ SAC_TQC_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_
 
 
 # QR_DQN
-QR_DQN_Vanilla_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 200, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999997, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 100,
+QR_DQN_Vanilla_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': 0.005, 'quantile_num': 51, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99999, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 25,
                         'batch_size': 32, 'warm_up': 1024, 'lr_critic': 0.00005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 QR_DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla'}
 QR_DQN_Vanilla_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
@@ -52,9 +52,9 @@ QR_DQN_ICM_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 
 QR_DQN_ICM_agent_config['extension'] = {'name': 'ICM', 'use_DDQN':True, 'icm_update_freq': 2, 'icm_lr': 0.001, 'icm_feature_dim': 128}
 QR_DQN_ICM_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
-QR_DQN_RND_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 32, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.9999, 'min_epsilon': 0.1, 'update_freq': 3, 'target_update_freq': 3,
-                        'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-QR_DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':True, 'rnd_update_freq': 5, 'rnd_lr': 0.0005}
+QR_DQN_RND_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 100, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999997, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 100,
+                        'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
+QR_DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':False, 'rnd_update_freq': 5, 'rnd_lr': 0.0005}
 QR_DQN_RND_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
 QR_DQN_NGU_agent_config = {'agent_name': 'QR_DQN', 'gamma' : 0.99, 'tau': None, 'quantile_num': 32, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.9999, 'min_epsilon': 0.1, 'update_freq': 3, 'target_update_freq': 3,

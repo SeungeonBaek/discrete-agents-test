@@ -29,8 +29,8 @@ class DistCritic(Model): # Distributional Q network
         self.obs_space = obs_space
         self.action_space = action_space
 
-        self.initializer = initializers.he_normal()
-        self.regularizer = regularizers.l2(l=0.001)
+        self.initializer = initializers.glorot_normal()
+        self.regularizer = regularizers.l2(l=0.0005)
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
@@ -251,13 +251,13 @@ class Agent:
 
         if (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
             if self.extension_name == 'ICM':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0
+                return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'RND':
-                return False, 0.0, 0.0, 0.0, 0.0
+                return False, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'NGU':
-                return False, 0.0, 0.0, 0.0
+                return False, 0.0, 0.0, 0.0, 0.0
             else:
-                return False, 0.0, 0.0, 0.0
+                return False, 0.0, 0.0, 0.0, 0.0
 
         updated = True
         self.update_step += 1
@@ -409,13 +409,13 @@ class Agent:
 
         # return for logging
         if self.extension_name == 'ICM':
-            return updated, critic_loss_val, target_q_val, current_q_val, icm_pred_next_s_loss_val, icm_pred_a_loss_val
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
         elif self.extension_name == 'RND':
-            return updated, critic_loss_val, target_q_val, current_q_val, rnd_pred_loss_val
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon, rnd_pred_loss_val
         elif self.extension_name == 'NGU':
             pass
         else:
-            return updated, critic_loss_val, target_q_val, current_q_val
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon
 
     def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.
