@@ -34,16 +34,12 @@ class DistCritic(Model): # Distributional Q network
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l3 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l4 = Dense(128, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.value_dist = Dense(self.action_space * self.quantile_num, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         l1 = self.l1(state) # Todo: check!
         l2 = self.l2(l1)
-        l3 = self.l3(l2)
-        l4 = self.l4(l3)
-        value_dist = self.value_dist(l4)
+        value_dist = self.value_dist(l2)
         value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num)) # check 필요
 
         return value_dist

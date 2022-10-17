@@ -1,4 +1,3 @@
-import wandb
 
 
 class RLLogger():
@@ -7,6 +6,8 @@ class RLLogger():
         self.rl_config = rl_config
         self.summary_writer = summary_writer
         self.wandb_session = wandb_session
+        if self.wandb_session is not None:
+            import wandb
 
     def step_logging(self, Agent, reward_int = None):
         if self.rl_config['tensorboard'] == True:
