@@ -199,12 +199,12 @@ class Agent:
                 action = np.argmax(mean_value)
             else:
                 action = np.random.randint(self.act_space)
+
+            self.epsilon *= self.epsilon_decaying_rate
+            if self.epsilon < self.min_epsilon:
+                self.epsilon = self.min_epsilon
         else:
             action = np.random.randint(self.act_space)
-
-        self.epsilon *= self.epsilon_decaying_rate
-        if self.epsilon < self.min_epsilon:
-            self.epsilon = self.min_epsilon
 
         return action
 
