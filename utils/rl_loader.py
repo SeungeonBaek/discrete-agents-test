@@ -47,7 +47,7 @@ class RLLoader():
             env.config['simulation_frequency'] = 15
             env.config['policy_frequency'] = 1
             env.config['other_vehicles_type'] = "highway_env.vehicle.behavior.IDMVehicle"
-            env.config['collision_reward'] = -2
+            env.config['collision_reward'] = -0.5
             env.config['reward_speed_range'] = [20,25]
             env.config['vehicles_count'] = 10
             env.config['scaling'] = 5.5

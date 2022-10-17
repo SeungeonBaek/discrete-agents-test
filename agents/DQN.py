@@ -183,13 +183,14 @@ class Agent:
                 action = np.argmax(values.numpy())
             else:
                 action = np.random.randint(self.act_space)
+
+            self.epsilon *= self.epsilon_decaying_rate
+            if self.epsilon < self.min_epsilon:
+                self.epsilon = self.min_epsilon
+
         else:
             action = np.random.randint(self.act_space)
         # print(f'in action, action: {np.shape(np.array(action))}')
-
-        self.epsilon *= self.epsilon_decaying_rate
-        if self.epsilon < self.min_epsilon:
-            self.epsilon = self.min_epsilon
 
         return action
 

@@ -137,7 +137,7 @@ if __name__ == '__main__':
     20: REDQ,   21: ICM_REDQ,    22: RND_REDQ,    23: NGU_REDQ
     """
 
-    env_switch = 1
+    env_switch = 4
     agent_switch = 3
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
