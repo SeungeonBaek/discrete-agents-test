@@ -10,6 +10,7 @@ from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LayerNormalization
 
 from utils.replay_buffer import ExperienceMemory
 from utils.prioritized_memory_numpy import PrioritizedMemory
@@ -26,13 +27,17 @@ class Critic(Model): # Q network
         self.regularizer = regularizers.l2(l=0.0005)
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l1_ln = LayerNormalization(axis=-1)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2_ln = LayerNormalization(axis=-1)
         self.value = Dense(act_space, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         l1 = self.l1(state)
-        l2 = self.l2(l1)
-        value = self.value(l2)
+        l1_ln = self.l1_ln(l1)
+        l2 = self.l2(l1_ln)
+        l2_ln = self.l2_ln(l2)
+        value = self.value(l2_ln)
 
         return value
 

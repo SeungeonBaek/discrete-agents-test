@@ -10,6 +10,7 @@ from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LayerNormalization
 
 from utils.replay_buffer import ExperienceMemory
 from utils.prioritized_memory_numpy import PrioritizedMemory
@@ -33,13 +34,17 @@ class DistCritic(Model): # Distributional Q network
         self.regularizer = regularizers.l2(l=0.0005)
         
         self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l1_ln = LayerNormalization(axis=-1)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2_ln = LayerNormalization(axis=-1)
         self.value_dist = Dense(self.action_space * self.quantile_num, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         l1 = self.l1(state) # Todo: check!
-        l2 = self.l2(l1)
-        value_dist = self.value_dist(l2)
+        l1_ln = self.l1_ln(l1)
+        l2 = self.l2(l1_ln)
+        l2_ln = self.l2_ln(l2)
+        value_dist = self.value_dist(l2_ln)
         value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num)) # check 필요
 
         return value_dist

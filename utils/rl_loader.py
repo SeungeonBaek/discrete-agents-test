@@ -11,7 +11,10 @@ class RLLoader():
             if self.env_config['render'] == True:
                 env = gym.make(self.env_config['env_name'], render_mode='human')
             else:
-                env = gym.make(self.env_config['env_name'], render_mode=None)
+                try:
+                    env = gym.make(self.env_config['env_name'], render_mode=None)
+                except:
+                    env = gym.make(self.env_config['env_name'])
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
         elif self.env_config['env_name'] == 'coin-run':
