@@ -20,6 +20,7 @@ REDQ (...working)
 QR_DQN  
 QUOTA (...working)  
 IQN (...working)  
+FQF (...working)  
 
 ## others
 PPO (...working)  
