@@ -150,7 +150,7 @@ class Agent:
         self.update_call_step = 0
         self.update_step = 0
         self.update_freq = self.agent_config['update_freq']
-        self.target_update_freq = agent_config['target_update_freq']
+        self.target_update_freq = self.agent_config['target_update_freq']
 
         if self.agent_config['use_PER']:
             self.replay_buffer = PrioritizedMemory(self.agent_config['buffer_size'])
