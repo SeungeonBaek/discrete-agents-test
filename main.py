@@ -3,9 +3,6 @@ from datetime import datetime
 from pprint import pprint
 from typing import Dict
 
-if __name__ == "__main__":
-	sys.path.append(os.getcwd())
-
 import numpy as np
 
 import pandas as pd
@@ -13,12 +10,14 @@ import time
 
 from tensorboardX import SummaryWriter
 
-from agent_env_config import env_agent_config
+if __name__ == "__main__":
+	sys.path.append(os.getcwd())
+
 from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
 
 
-def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path: str, rl_logger: RLLogger, rl_loader: RLLoader):
+def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, result_path:str, data_save_path: str, rl_logger: RLLogger, rl_loader: RLLoader):
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
@@ -37,6 +36,12 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
     Agent = RLAgent(agent_config, obs_space, act_space)
     print('agent_name: {}'.format(agent_config['agent_name']))
 
+    # define max step
+    if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
+        max_step = env.config['duration'] * env.config['policy_frequency']
+    else:
+        max_step = env_config['max_step']
+
     # csv logging
     if rl_confing['csv_logging']:
         episode_data = dict()
@@ -44,7 +49,22 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
         episode_data['mean_reward']   = np.zeros(env_config['max_episode'], dtype=np.float32)
         episode_data['episode_step']  = np.zeros(env_config['max_episode'], dtype=np.float32)
 
+        if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
+            step_data = dict()
+            for episode_num in range(env_config['max_episode']):
+                step_data[str(episode_num)] = dict()
+                step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['position_y']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['velocity_x']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['velocity_y']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['time_headway']     = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['inverse_of_ttc']   = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['lane_change_flag'] = np.zeros(max_step, dtype=np.float32)
+        else:
+            pass
+
     total_step = 0
+    max_score = 0
 
     for episode_num in range(1, env_config['max_episode']):
         episode_score = 0
@@ -95,7 +115,7 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
             # pprint(f"prev_obs:{prev_obs}")
             prev_action = action
 
-            if episode_step >= env_config['max_step']:
+            if episode_step >= max_step:
                 done = True
                 continue
             
@@ -103,6 +123,15 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 rl_logger.step_logging(Agent, reward_int)
             else:
                 rl_logger.step_logging(Agent)
+
+            if rl_config['csv_logging']:
+                step_data[str(episode_num-1)]['position_x'][episode_step]   = obs[1] * env.config['observation']['features_range']['x'][1]
+                step_data[str(episode_num-1)]['position_y'][episode_step]   = obs[2] * env.config['observation']['features_range']['y'][1]
+                step_data[str(episode_num-1)]['velocity_x'][episode_step]   = obs[3] * env.config['observation']['features_range']['vx'][1]
+                step_data[str(episode_num-1)]['velocity_y'][episode_step]   = obs[4] * env.config['observation']['features_range']['vy'][1]
+                step_data[str(episode_num-1)]['time_headway'][episode_step] = obs[0]
+                step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step] = obs[0]
+                step_data[str(episode_num-1)]['lane_change_flag'][episode_step] = True if action == 0 or action == 2 else False
 
         env.close()
 
@@ -117,11 +146,24 @@ def main(env_config: Dict, agent_config: Dict, rl_confing: Dict, data_save_path:
                 episode_data_df = pd.DataFrame(episode_data)
                 episode_data_df.to_csv(data_save_path+'episode_data.csv', mode='w',encoding='UTF-8' ,compression=None)
 
+                episode_step_data_df = pd.DataFrame(step_data[str(episode_num-1)])
+                if os.path.exists(data_save_path + "step_data"):
+                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                else:
+                    os.makedirs(data_save_path + "step_data")
+                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+
+        if episode_score > max_score:
+            Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
+            max_score = episode_score
+
         print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
         
     env.close()
 
+
 if __name__ == '__main__':
+    from agent_env_config import env_agent_config
     """
     Env
     1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
@@ -137,12 +179,12 @@ if __name__ == '__main__':
     20: REDQ,   21: ICM_REDQ,    22: RND_REDQ,    23: NGU_REDQ
     """
 
-    env_switch = 1
-    agent_switch = 1w
+    env_switch = 4
+    agent_switch = 1
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': True}
+    rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -160,4 +202,4 @@ if __name__ == '__main__':
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
-    main(env_config, agent_config, rl_config, data_save_path, rl_logger, rl_loader)
+    main(env_config, agent_config, rl_config, result_path, data_save_path, rl_logger, rl_loader)
