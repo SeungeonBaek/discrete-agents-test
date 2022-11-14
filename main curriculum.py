@@ -2,11 +2,11 @@ import os, sys
 from datetime import datetime
 from pprint import pprint
 from typing import Dict
+from collections import deque
+import time
 
 import numpy as np
-
 import pandas as pd
-import time
 
 from tensorboardX import SummaryWriter
 
@@ -86,8 +86,9 @@ def main_curriculum(env_config: Dict,
 
     total_step = 0
     max_score = 0
-    current_curriculum = 0
-    next_curriculum_flag = False
+    episode_score_array = deque(maxlen=10)
+    current_curriculum = -1
+    next_curriculum_flag = True
 
     for episode_num in range(1, env_config['max_episode']):
         episode_score = 0
@@ -102,6 +103,8 @@ def main_curriculum(env_config: Dict,
         if next_curriculum_flag == True:
             current_curriculum += 1
             for key, val in curriculum_config.items():
+                if key == 'total_curriculum':
+                    continue
                 env.config[key] = val[current_curriculum]
 
             next_curriculum_flag = False
@@ -128,7 +131,7 @@ def main_curriculum(env_config: Dict,
             if env_config['env_name'] == 'LunarLander-v2' or 'custom_highway-v0':
                 obs, reward, done, _ = env.step(action)
 
-            elif env_config['env_name'] == None: # Todo
+            elif env_config['env_name'] == None: # Todo: gym version issue
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
@@ -218,11 +221,16 @@ def main_curriculum(env_config: Dict,
             max_score = episode_score
 
         # Curriculum control
-        if episode_score > max_step * 0.9: # Todo
-            next_curriculum_flag = False
-
+        if sum(episode_score_array)/len(episode_score_array) > max_step * 0.9:
+            next_curriculum_flag = True
+        
         print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
         
+        if current_curriculum == (curriculum_config['total_curriculum']-1):
+            print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
+            env.close()
+            break
+
     env.close()
 
 
@@ -251,6 +259,9 @@ if __name__ == '__main__':
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
     rl_custom_config = {'use_prev_obs': True, 'use_learned_model': True, 'learned_model_score': 59.009}
 
+    rl_curriculum_config = {'total_curriculum': 3,
+                            'vehicle_count':[1, 2, 3],} # Todo
+    
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -267,4 +278,4 @@ if __name__ == '__main__':
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
-    main_curriculum(env_config, agent_config, rl_config, rl_custom_config, result_path, data_save_path, rl_logger, rl_loader)
+    main_curriculum(env_config, agent_config, rl_config, rl_custom_config, rl_curriculum_config, result_path, data_save_path, rl_logger, rl_loader)
