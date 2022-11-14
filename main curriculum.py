@@ -259,9 +259,18 @@ if __name__ == '__main__':
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
     rl_custom_config = {'use_prev_obs': True, 'use_learned_model': True, 'learned_model_score': 59.009}
 
+    """
+    env.config['ego_vehicle_spd'] = 25 # default
+    env.config['other_vehicle_spd'] = 25 # default
+    env.config['vehicles_count'] = 10
+    env.config['vehicles_density']= 0.7
+    """
     rl_curriculum_config = {'total_curriculum': 3,
-                            'vehicle_count':[1, 2, 3],} # Todo
-    
+                            'ego_vehicle_spd': [1, 2, 3],
+                            'other_vehicle_spd': [1, 2, 3],
+                            'vehicles_count':[1, 2, 3],
+                            'vehicles_density': [1, 2, 3]} # TBD
+
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 

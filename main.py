@@ -233,7 +233,7 @@ if __name__ == '__main__':
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
-    rl_custom_config = {'use_prev_obs': True, 'use_learned_model': True, 'learned_model_score': 59.009}
+    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_model_score': 59.009}
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

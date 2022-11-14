@@ -65,16 +65,17 @@ class HighwayEnv(AbstractEnv):
         for others in other_per_controlled:
             vehicle = Vehicle.create_random(
                 self.road,
-                speed=25,
+                speed=self.config['ego_vehicle_spd'], # default: 25
                 lane_id=self.config["initial_lane_id"],
                 spacing=self.config["ego_spacing"]
             )
             vehicle = self.action_type.vehicle_class(self.road, vehicle.position, vehicle.heading, vehicle.speed)
             self.controlled_vehicles.append(vehicle)
             self.road.vehicles.append(vehicle)
-
+            
             for _ in range(others):
-                vehicle = other_vehicles_type.create_random(self.road, spacing=1 / self.config["vehicles_density"])
+                other_vehicle_spd = np.random.uniform(self.config['other_vehicle_spd']*0.9, self.config['other_vehicle_spd']*1.1)
+                vehicle = other_vehicles_type.create_random(self.road, speed=other_vehicle_spd, spacing=1 / self.config["vehicles_density"])
                 vehicle.randomize_behavior()
                 self.road.vehicles.append(vehicle)
 
