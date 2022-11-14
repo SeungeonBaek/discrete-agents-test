@@ -9,80 +9,80 @@ class RLLogger():
         if self.wandb_session is not None:
             import wandb
 
-    def step_logging(self, Agent, reward_int = None):
+    def step_logging(self, Agent: object, reward_int: float = None, inference_mode: bool = False):
         if self.rl_config['tensorboard'] == True:
-            self.step_logging_tensorboard(Agent, reward_int)
+            self.step_logging_tensorboard(Agent, reward_int, inference_mode)
         if self.rl_config['wandb'] == True:
-            self.step_logging_wandb(Agent, reward_int)
+            self.step_logging_wandb(Agent, reward_int, inference_mode)
 
-    def episode_logging(self, *args):
+    def episode_logging(self, *args, inference_mode:bool = False):
         if self.rl_config['tensorboard'] == True:
-            self.episode_logging_tensorboard(*args)
+            self.episode_logging_tensorboard(*args, inference_mode)
         if self.rl_config['wandb'] == True:
-            self.episode_logging_wandb(*args)
+            self.episode_logging_wandb(*args, inference_mode)
 
-    def step_logging_tensorboard(self, Agent, reward_int = None):
+    def step_logging_tensorboard(self, Agent, reward_int = None, inference_mode: bool = False):
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
             else:
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'SAC':
             if self.agent_config['extension']['name'] == 'TQC':
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
             else:
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'QR_DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
 
         elif self.agent_config['extension']['name'] == 'IQN':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['extension']['name'] == 'QUOTA':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'Agent57':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'REDQ':
             if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         # Logging
         if self.agent_config['agent_name'] == 'DQN':
@@ -167,68 +167,68 @@ class RLLogger():
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
 
 
-    def step_logging_wandb(self, Agent, reward_int):
+    def step_logging_wandb(self, Agent, reward_int, inference_mode: bool = False):
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
             else:
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'SAC':
             if self.agent_config['extension']['name'] == 'TQC':
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
             else:
-                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update()
+                updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'QR_DQN':
             if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
 
         elif self.agent_config['extension']['name'] == 'IQN':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['extension']['name'] == 'QUOTA':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'Agent57':
-            updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+            updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'REDQ':
             if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update()
+                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
         # Logging
         if self.agent_config['agent_name'] == 'DQN':
@@ -329,14 +329,14 @@ class RLLogger():
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
 
-    def episode_logging_tensorboard(self, Agent, episode_score, episode_step, episode_num, episode_rewards):
+    def episode_logging_tensorboard(self, Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode: bool = False):
         if self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'MEPPO':
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'gSDE':
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
             else:
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
 
             if updated:
                 self.summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
@@ -353,14 +353,14 @@ class RLLogger():
 
         self.summary_writer.add_histogram('Reward_histogram', episode_rewards, episode_num)
 
-    def episode_logging_wandb(self, Agent, episode_score, episode_step, episode_num, episode_rewards):
+    def episode_logging_wandb(self, Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode: bool = False):
         if self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'MEPPO':
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
             elif self.agent_config['extension']['name'] == 'gSDE':
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
             else:
-                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update()
+                updated, entropy, ratio, actor_loss, advantage, target_val, critic_value, critic_loss = Agent.update(inference_mode)
 
             if updated:
                 self.wandb_session.log({

@@ -104,13 +104,12 @@ if __name__ == '__main__':
     env_switch = 4
     agent_switch = 1
 
-    episode_num = 19
-
-    avg_window = 5
-    end_of_episode = 20
-    end_of_step = 79
-
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
+
+    episode_num = 19 # which step data of episode you wanna observe?
+    avg_window = 5 # time window of moving average of socre ,mean reward data
+    end_of_episode = 20 # clip the rl episode number
+    end_of_step = 79 # clip the total step number
 
     parent_path = str(os.path.abspath(''))
 
@@ -118,7 +117,9 @@ if __name__ == '__main__':
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\"
     elif os.name == 'linux':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
-    data_save_path = data_save_path + '2022-11-12_16-28-53\\'
+
+    # Notice: you should change the time frame of data
+    data_save_path = data_save_path + '2022-11-13_00-08-05\\'
 
     episode_data, step_data = loading_data(data_save_path, episode_num)
     plot_highway(env_config['env_name'], agent_config['agent_name'], episode_data, step_data, avg_window, end_of_episode, end_of_step)
