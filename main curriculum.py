@@ -17,14 +17,16 @@ from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
 
 
-def main(env_config: Dict,
+def main_curriculum(env_config: Dict,
          agent_config: Dict,
          rl_config: Dict,
          rl_custom_config: Dict,
+         curriculum_config: Dict,
          result_path:str,
          data_save_path: str,
          rl_logger: RLLogger,
          rl_loader: RLLoader):
+
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
@@ -84,6 +86,8 @@ def main(env_config: Dict,
 
     total_step = 0
     max_score = 0
+    current_curriculum = 0
+    next_curriculum_flag = False
 
     for episode_num in range(1, env_config['max_episode']):
         episode_score = 0
@@ -93,6 +97,14 @@ def main(env_config: Dict,
         prev_obs = None
         prev_action = None
         episode_rewards = []
+
+        # Curriculum control
+        if next_curriculum_flag == True:
+            current_curriculum += 1
+            for key, val in curriculum_config.items():
+                env.config[key] = val[current_curriculum]
+
+            next_curriculum_flag = False
 
         obs = env.reset()
         obs = np.array(obs)
@@ -205,6 +217,10 @@ def main(env_config: Dict,
             Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
             max_score = episode_score
 
+        # Curriculum control
+        if episode_score > max_step * 0.9: # Todo
+            next_curriculum_flag = False
+
         print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
         
     env.close()
@@ -251,4 +267,4 @@ if __name__ == '__main__':
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
-    main(env_config, agent_config, rl_config, rl_custom_config, result_path, data_save_path, rl_logger, rl_loader)
+    main_curriculum(env_config, agent_config, rl_config, rl_custom_config, result_path, data_save_path, rl_logger, rl_loader)
