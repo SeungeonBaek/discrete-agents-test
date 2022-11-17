@@ -29,9 +29,10 @@ class RLLoader():
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
         elif self.env_config['env_name'] == 'custom_highway-v0':
-            import envs.highway_env
+            import envs.custom_highway_env
 
-            env = gym.make(self.env_config['env_name'].split('_')[1])
+            # env = gym.make(self.env_config['env_name'].split('_')[1])
+            env = gym.make(self.env_config['env_name'].replace("_", "-"))
             env.config['observation']['type'] = "Kinematics"
             env.config['observation']['vehicles_count'] =5
             env.config['observation']['features'] = ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"]
