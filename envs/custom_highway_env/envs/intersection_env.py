@@ -297,20 +297,20 @@ TupleMultiAgentIntersectionEnv = MultiAgentWrapper(MultiAgentIntersectionEnv)
 
 register(
     id='custom-intersection-v0',
-    entry_point='highway_env.envs:IntersectionEnv',
+    entry_point='envs.custom_highway_env.envs:IntersectionEnv',
 )
 
 register(
     id='custom-intersection-v1',
-    entry_point='highway_env.envs:ContinuousIntersectionEnv',
+    entry_point='envs.custom_highway_env.envs:ContinuousIntersectionEnv',
 )
 
 register(
     id='custom-intersection-multi-agent-v0',
-    entry_point='highway_env.envs:MultiAgentIntersectionEnv',
+    entry_point='envs.custom_highway_env.envs:MultiAgentIntersectionEnv',
 )
 
 register(
     id='custom-intersection-multi-agent-v1',
-    entry_point='highway_env.envs:TupleMultiAgentIntersectionEnv',
+    entry_point='envs.custom_highway_env.envs:TupleMultiAgentIntersectionEnv',
 )

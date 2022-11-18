@@ -43,8 +43,18 @@ def plot_highway(env_name: str, agent_name: str, episode_data: pd.DataFrame, ste
     # axes_1['MeanReward'].set_ylim((-100, -10))
 
     # Step data - 1: line plot
-    sns.lineplot(ax=axes_1['Pos_xy'], x=step_data['position_x'][:step_num], y=step_data['position_y'][:step_num], palette = palette)
-    # axes_1['MeanReward'].set_ylim((-100, -10))
+    sns.lineplot(ax=axes_1['Pos_xy'], x=step_data['position_x'][:step_num], y=step_data['position_y'][:step_num], palette = palette,\
+        marker='s', dashes=True)
+
+    sns.scatterplot(ax=axes_1['Pos_xy'], x=step_data['other_1_pos_x'][:step_num], y=step_data['other_1_pos_y'][:step_num], palette = palette,\
+        marker='s', color=[0.75, 0.75, 0.75])
+    sns.scatterplot(ax=axes_1['Pos_xy'], x=step_data['other_2_pos_x'][:step_num], y=step_data['other_2_pos_y'][:step_num], palette = palette,\
+        marker='s', color=[0.75, 0.75, 0.75])
+    sns.scatterplot(ax=axes_1['Pos_xy'], x=step_data['other_3_pos_x'][:step_num], y=step_data['other_3_pos_y'][:step_num], palette = palette,\
+        marker='s', color=[0.75, 0.75, 0.75])
+    sns.scatterplot(ax=axes_1['Pos_xy'], x=step_data['other_4_pos_x'][:step_num], y=step_data['other_4_pos_y'][:step_num], palette = palette,\
+        marker='s', color=[0.75, 0.75, 0.75])
+    axes_1['Pos_xy'].set_xlim((0, 5000))
 
     sns.lineplot(ax=axes_1['Pos_x'], x=range(len(step_data['position_x'][:step_num])), y=step_data['position_x'][:step_num].rolling(window=avg_num).mean(), palette = palette)
     # axes_1['MeanReward'].set_ylim((-100, -10))
@@ -108,7 +118,7 @@ if __name__ == '__main__':
 
     episode_num = 19 # which step data of episode you wanna observe?
     avg_window = 5 # time window of moving average of socre ,mean reward data
-    end_of_episode = 20 # clip the rl episode number
+    end_of_episode = 32 # clip the rl episode number
     end_of_step = 79 # clip the total step number
 
     parent_path = str(os.path.abspath(''))
@@ -119,7 +129,7 @@ if __name__ == '__main__':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
 
     # Notice: you should change the time frame of data
-    data_save_path = data_save_path + '2022-11-13_00-08-05\\'
+    data_save_path = data_save_path + '2022-11-18_10-23-01\\'
 
     episode_data, step_data = loading_data(data_save_path, episode_num)
     plot_highway(env_config['env_name'], agent_config['agent_name'], episode_data, step_data, avg_window, end_of_episode, end_of_step)

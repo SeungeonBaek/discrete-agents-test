@@ -117,6 +117,6 @@ class TwoWayEnv(AbstractEnv):
 
 register(
     id='custom-two-way-v0',
-    entry_point='highway_env.envs:TwoWayEnv',
+    entry_point='envs.custom_highway_env.envs:TwoWayEnv',
     max_episode_steps=15
 )

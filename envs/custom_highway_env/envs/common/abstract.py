@@ -19,7 +19,6 @@ from envs.custom_highway_env.vehicle.kinematics import Vehicle
 Observation = np.ndarray
 
 class AbstractEnv(gym.Env):
-
     """
     A generic environment for various tasks involving a vehicle driving on a road.
 

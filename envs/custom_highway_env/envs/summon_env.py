@@ -123,12 +123,12 @@ class SummonEnvActionRepeat(SummonEnv):
 
 register(
     id='custom-summon-v0',
-    entry_point='highway_env.envs:SummonEnv',
+    entry_point='envs.custom_highway_env.envs:SummonEnv',
     max_episode_steps=100
 )
 
 register(
     id='custom-summon-ActionRepeat-v0',
-    entry_point='highway_env.envs:SummonEnvActionRepeat',
+    entry_point='envs.custom_highway_env.envs:SummonEnvActionRepeat',
     max_episode_steps=20
 )

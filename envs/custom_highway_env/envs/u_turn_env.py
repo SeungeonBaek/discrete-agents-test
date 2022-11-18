@@ -206,5 +206,5 @@ class UTurnEnv(AbstractEnv):
 
 register(
     id='custom-u-turn-v0',
-    entry_point='highway_env.envs:UTurnEnv'
+    entry_point='envs.custom_highway_env.envs:UTurnEnv'
 )

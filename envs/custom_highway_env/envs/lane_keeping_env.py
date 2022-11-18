@@ -149,6 +149,6 @@ class LaneKeepingEnv(AbstractEnv):
 
 register(
     id='custom-lane-keeping-v0',
-    entry_point='highway_env.envs:LaneKeepingEnv',
+    entry_point='envs.custom_highway_env.envs:LaneKeepingEnv',
     max_episode_steps=200
 )

@@ -193,10 +193,10 @@ class ParkingEnvActionRepeat(ParkingEnv):
 
 register(
     id='custom-parking-v0',
-    entry_point='highway_env.envs:ParkingEnv',
+    entry_point='envs.custom_highway_env.envs:ParkingEnv',
 )
 
 register(
     id='custom-parking-ActionRepeat-v0',
-    entry_point='highway_env.envs:ParkingEnvActionRepeat'
+    entry_point='envs.custom_highway_env.envs:ParkingEnvActionRepeat'
 )

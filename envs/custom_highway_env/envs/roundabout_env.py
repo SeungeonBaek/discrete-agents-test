@@ -184,5 +184,5 @@ class RoundaboutEnv(AbstractEnv):
 
 register(
     id='custom-roundabout-v0',
-    entry_point='highway_env.envs:RoundaboutEnv',
+    entry_point='envs.custom_highway_env.envs:RoundaboutEnv',
 )

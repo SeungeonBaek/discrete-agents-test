@@ -42,7 +42,8 @@ class RLLoader():
                                                             "vx": [-20, 20],
                                                             "vy": [-20, 20]
                                                         }
-            env.config['observation']['absolute'] = False
+            env.config['observation']['absolute'] = True
+            env.config['observation']['normalize'] = True
             env.config['observation']['order'] = "sorted"
             env.config['action'] = { "type": "DiscreteMetaAction",}
             env.config['lanes_count'] = 3
@@ -63,7 +64,6 @@ class RLLoader():
             env.config['right_lane_reward'] = 0
 
             _ = env.reset()
-
             obs_space = env.observation_space.shape
             act_space = env.action_space.n
 

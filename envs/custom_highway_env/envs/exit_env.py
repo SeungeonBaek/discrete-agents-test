@@ -146,6 +146,6 @@ class ExitEnv(HighwayEnv):
 
 
 register(
-    id='exit-v0',
+    id='custom-exit-v0',
     entry_point='custom-highway_env.envs:ExitEnv',
 )

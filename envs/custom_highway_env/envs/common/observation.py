@@ -4,6 +4,7 @@ from typing import List, Dict, TYPE_CHECKING, Optional, Union, Tuple
 from gym import spaces
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 
 from envs.custom_highway_env import utils
 from envs.custom_highway_env.envs.common.finite_mdp import compute_ttc_grid
@@ -14,7 +15,7 @@ from envs.custom_highway_env.vehicle.controller import MDPVehicle
 from envs.custom_highway_env.vehicle.kinematics import Vehicle
 
 if TYPE_CHECKING:
-    from highway_env.envs.common.abstract import AbstractEnv
+    from envs.custom_highway_env.envs.common.abstract import AbstractEnv
 
 
 class ObservationType(object):
@@ -219,18 +220,29 @@ class KinematicObservation(ObservationType):
                            ignore_index=True)
         # Normalize and clip
         if self.normalize:
+            raw_df = deepcopy(df)
             df = self.normalize_obs(df)
+
         # Fill missing rows
         if df.shape[0] < self.vehicles_count:
             rows = np.zeros((self.vehicles_count - df.shape[0], len(self.features)))
             df = pd.concat([df, pd.DataFrame(data=rows, columns=self.features)], ignore_index=True)
+
+            raw_rows = np.zeros((self.vehicles_count - raw_df.shape[0], len(self.features)))
+            raw_df = pd.concat([df, pd.DataFrame(data=raw_rows, columns=self.features)], ignore_index=True)
+
         # Reorder
         df = df[self.features]
+        raw_df = raw_df[self.features]
+
         obs = df.values.copy()
+        raw_obs = raw_df.values.copy()
+
         if self.order == "shuffled":
             self.env.np_random.shuffle(obs[1:])
+            self.env.np_random.shuffle(raw_obs[1:])
         # Flatten
-        return obs.astype(self.space().dtype)
+        return [obs.astype(self.space().dtype), raw_obs.astype(self.space().dtype)]
 
 
 class OccupancyGridObservation(ObservationType):

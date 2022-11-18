@@ -251,10 +251,10 @@ class Agent:
                 critic_weithgs.append(weight * self.tau + critic_targets[idx] * (1 - self.tau))
             self.critic_target.set_weights(critic_weithgs)
 
-    def update(self)-> None:
+    def update(self, inference_mode: bool=False)-> None:
         self.update_call_step += 1
 
-        if (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
+        if inference_mode == True or (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
             if self.extension_name == 'ICM':
                 return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             elif self.extension_name == 'RND':

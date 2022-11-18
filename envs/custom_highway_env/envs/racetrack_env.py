@@ -219,5 +219,5 @@ class RacetrackEnv(AbstractEnv):
 
 register(
     id='custom-racetrack-v0',
-    entry_point='highway_env.envs:RacetrackEnv',
+    entry_point='envs.custom_highway_env.envs:RacetrackEnv',
 )

@@ -18,7 +18,7 @@ class HighwayEnv(AbstractEnv):
     The vehicle is driving on a straight highway with several lanes, and is rewarded for reaching a high speed,
     staying on the rightmost lanes and avoiding collisions.
     """
-
+    
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
@@ -34,7 +34,9 @@ class HighwayEnv(AbstractEnv):
             "controlled_vehicles": 1,
             "initial_lane_id": None,
             "duration": 40,  # [s]
+            "ego_vehicle_spd": 25,
             "ego_spacing": 2,
+            "other_vehicle_spd": 25,
             "vehicles_density": 1,
             "collision_reward": -1,    # The reward received when colliding with a vehicle.
             "right_lane_reward": 0.1,  # The reward received when driving on the right-most lanes, linearly mapped to
@@ -200,15 +202,15 @@ class MOHighwayEnv(HighwayEnv):
 
 register(
     id='custom-highway-v0',
-    entry_point='highway_env.envs:HighwayEnv',
+    entry_point='envs.custom_highway_env.envs:HighwayEnv',
 )
 
 register(
     id='custom-highway-fast-v0',
-    entry_point='highway_env.envs:HighwayEnvFast',
+    entry_point='envs.custom_highway_env.envs:HighwayEnvFast',
 )
 
 register(
     id='custom-mo-highway-v0',
-    entry_point='highway_env.envs:MOHighwayEnv',
+    entry_point='envs.custom_highway_env.envs:MOHighwayEnv',
 )
