@@ -1,3 +1,4 @@
+from typing import Dict, Text
 import numpy as np
 from gym.envs.registration import register
 
@@ -45,6 +46,7 @@ class HighwayEnv(AbstractEnv):
                                        # lower speeds according to config["reward_speed_range"].
             "lane_change_reward": -0.05,   # The reward received at each lane change action.
             "reward_speed_range": [20, 30],
+            "normalize_reward": True,
             "offroad_terminal": False
         })
         return config
@@ -88,7 +90,7 @@ class HighwayEnv(AbstractEnv):
         :return: the corresponding reward
         """
         rewards = self._rewards(action)
-        reward = sum(self.config.get(name, 0) * reward for name, reward in _rewards(action).items())
+        reward = sum(self.config.get(name, 0) * reward for name, reward in self._rewards(action).items())
         if self.config["normalize_reward"]:
             reward = utils.lmap(reward,
                                 [self.config["collision_reward"] + self.config["lane_change_reward"],

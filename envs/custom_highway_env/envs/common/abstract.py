@@ -1,24 +1,25 @@
 import copy
 import os
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Optional, Callable, TypeVar, Generic, Union, Dict, Text
 import gym
 from gym import Wrapper
 from gym.wrappers import RecordVideo
 from gym.utils import seeding
 import numpy as np
 
-from envs.custom_highway_env import utils
-from envs.custom_highway_env.envs.common.action import action_factory, Action, DiscreteMetaAction, ActionType
-from envs.custom_highway_env.envs.common.observation import observation_factory, ObservationType
-from envs.custom_highway_env.envs.common.finite_mdp import finite_mdp
-from envs.custom_highway_env.envs.common.graphics import EnvViewer
-from envs.custom_highway_env.vehicle.behavior import IDMVehicle, LinearVehicle
-from envs.custom_highway_env.vehicle.controller import MDPVehicle
-from envs.custom_highway_env.vehicle.kinematics import Vehicle
+from highway_env import utils
+from highway_env.envs.common.action import action_factory, Action, DiscreteMetaAction, ActionType
+from highway_env.envs.common.observation import observation_factory, ObservationType
+from highway_env.envs.common.finite_mdp import finite_mdp
+from highway_env.envs.common.graphics import EnvViewer
+from highway_env.vehicle.behavior import IDMVehicle, LinearVehicle
+from highway_env.vehicle.controller import MDPVehicle
+from highway_env.vehicle.kinematics import Vehicle
 
 Observation = np.ndarray
 
 class AbstractEnv(gym.Env):
+
     """
     A generic environment for various tasks involving a vehicle driving on a road.
 
@@ -136,6 +137,16 @@ class AbstractEnv(gym.Env):
 
         :param action: the last action performed
         :return: the reward
+        """
+        raise NotImplementedError
+    
+    def _rewards(self, action: Action) -> Dict[Text, float]:
+        """
+        Returns a multi-objective vector of rewards.
+        If implemented, this reward vector should be aggregated into a scalar in _reward().
+        This vector value should only be returned inside the info dict.
+        :param action: the last action performed
+        :return: a dict of {'reward_name': reward_value}
         """
         raise NotImplementedError
 
