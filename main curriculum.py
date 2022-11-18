@@ -1,3 +1,6 @@
+import serversetup
+serversetup.server_setup()
+
 import os, sys
 from datetime import datetime
 from pprint import pprint
