@@ -1,3 +1,6 @@
+import serversetup
+serversetup.server_setup()
+
 import os, sys
 from datetime import datetime
 from pprint import pprint
@@ -28,6 +31,7 @@ def main(env_config: Dict,
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
+
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -92,6 +96,7 @@ def main(env_config: Dict,
 
     total_step = 0
     max_score = 0
+    
 
     for episode_num in range(1, env_config['max_episode']):
         episode_score = 0
@@ -103,6 +108,8 @@ def main(env_config: Dict,
         episode_rewards = []
 
         obs = env.reset()
+        #print(obs[0][3])
+        #print(obs[1][3])
         if env_config['env_name'] == 'custom_highway-v0':
             obs = np.array(obs[0])
         else:
@@ -250,7 +257,7 @@ if __name__ == '__main__':
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
+    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': False}
     rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_model_score': 59.009}
 
     parent_path = str(os.path.abspath(''))
