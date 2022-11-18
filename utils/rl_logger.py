@@ -1,4 +1,4 @@
-
+import wandb
 
 class RLLogger():
     def __init__(self, agent_config, rl_config, summary_writer = None, wandb_session = None):

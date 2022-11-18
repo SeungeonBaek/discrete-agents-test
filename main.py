@@ -253,11 +253,11 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 1
+    agent_switch = 11
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': False}
+    rl_config = {'csv_logging': True, 'wandb': True, 'tensorboard': False}
     rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_model_score': 59.009}
 
     parent_path = str(os.path.abspath(''))

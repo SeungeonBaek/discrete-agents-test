@@ -42,7 +42,7 @@ class RLLoader():
                                                             "vx": [-20, 20],
                                                             "vy": [-20, 20]
                                                         }
-            env.config['observation']['absolute'] = True
+            env.config['observation']['absolute'] = False
             env.config['observation']['normalize'] = True
             env.config['observation']['order'] = "sorted"
             env.config['action'] = { "type": "DiscreteMetaAction",}
@@ -52,16 +52,17 @@ class RLLoader():
             env.config['simulation_frequency'] = 15
             env.config['policy_frequency'] = 1
             env.config['other_vehicles_type'] = "highway_env.vehicle.behavior.IDMVehicle"
-            env.config['ego_vehicle_spd'] = 1 # default
-            env.config['other_vehicle_spd'] = 1 # default
+            env.config['ego_vehicle_spd'] = 10 # default
+            env.config['other_vehicle_spd'] = 0 # default
             env.config['vehicles_count'] = 10
-            env.config['vehicles_density']= 1
+            env.config['vehicles_density']= 0.5
             env.config['collision_reward'] = -1
             env.config['reward_speed_range'] = [0,25]
             env.config['scaling'] = 5.5
             env.config['offscreen_rendering']= False
             env.config['ego_spacing']= 2
             env.config['right_lane_reward'] = 0
+            env.config['real_time_rendering'] = True
 
             _ = env.reset()
             obs_space = env.observation_space.shape
