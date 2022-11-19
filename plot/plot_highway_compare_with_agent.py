@@ -12,7 +12,10 @@ def loading_data(data_save_paths: str, episode_nums: int)-> Tuple[List[pd.DataFr
 
     for data_save_path, episode_num in zip(data_save_paths, episode_nums):
         episode_data.append(pd.read_csv(data_save_path + "episode_data.csv", index_col=0))
-        step_data.append(pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0))
+        if os.name == 'nt':
+            step_data.append(pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0))
+        elif os.name == 'posix':
+            step_data.append(pd.read_csv(data_save_path + f"/step_data/episode_{episode_num}_data.csv", index_col=0))
 
     return episode_data, step_data
 
@@ -127,14 +130,17 @@ if __name__ == '__main__':
     parent_path = str(os.path.abspath(''))
 
     data_save_paths = []
-    time_stamps = ['2022-11-13_00-08-05\\', '2022-11-13_00-08-05\\']
+    if os.name == 'nt':
+        time_stamps = ['2022-11-13_00-08-05\\', '2022-11-13_00-08-05\\']
+    if os.name == 'posix':
+        time_stamps = ['2022-11-13_00-08-05/', '2022-11-13_00-08-05/']
 
     for env_config, agent_config, time_stamp in zip(env_configs, agent_configs, time_stamps):
         if os.name == 'nt':
             temp_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\")
             temp_path += time_stamp
             data_save_paths.append(temp_path)
-        elif os.name == 'linux':
+        elif os.name == 'posix':
             temp_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
             temp_path += time_stamp
             data_save_paths.append(temp_path)

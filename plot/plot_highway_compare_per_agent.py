@@ -11,7 +11,10 @@ def loading_data(data_save_path: str, episode_nums: int)-> Tuple[pd.DataFrame, L
 
     step_data = []
     for episode_num in episode_nums:
-        step_data.append(pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0))
+        if os.name == 'nt':
+            step_data.append(pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0))
+        elif os.name == 'posix':
+            step_data.append(pd.read_csv(data_save_path + f"/step_data/episode_{episode_num}_data.csv", index_col=0))
 
     return episode_data, step_data
 
@@ -117,11 +120,12 @@ if __name__ == '__main__':
 
     if os.name == 'nt':
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\"
-    elif os.name == 'linux':
+        # Notice: you should change the time frame of data
+        data_save_path = data_save_path + '2022-11-13_00-08-05\\'
+    elif os.name == 'posix':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
-
-    # Notice: you should change the time frame of data
-    data_save_path = data_save_path + '2022-11-13_00-08-05\\'
+        # Notice: you should change the time frame of data
+        data_save_path = data_save_path + '2022-11-13_00-08-05/'
 
     episode_data, step_data = loading_data(data_save_path, episode_nums)
     plot_highway(env_config['env_name'], agent_config['agent_name'], episode_data, step_data, avg_window, end_of_episode, end_of_step)
