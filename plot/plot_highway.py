@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
     if os.name == 'nt':
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\"
-    elif os.name == 'linux':
+    elif os.name == 'posix':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
 
     # Notice: you should change the time frame of data
