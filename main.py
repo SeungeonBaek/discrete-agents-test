@@ -46,7 +46,12 @@ def main(env_config: Dict,
     RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
     if rl_custom_config['use_learned_model']:
-        Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
+        if os.name == 'nt':
+            Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
+        elif os.name == 'posix':
+            Agent.load_models(path=result_path + "/" + str(rl_custom_config['learned_model_score']) + "_model")
+        else:
+            raise ValueError("what's the os??")
     else:
         pass
 
@@ -221,13 +226,28 @@ def main(env_config: Dict,
 
                 episode_step_data_df = pd.DataFrame(step_data[str(episode_num-1)])
                 if os.path.exists(data_save_path + "step_data"):
-                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    if os.name == 'nt':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    elif os.name == 'posix':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    else:
+                        raise ValueError("what's the os??")
                 else:
                     os.makedirs(data_save_path + "step_data")
-                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    if os.name == 'nt':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    elif os.name == 'posix':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    else:
+                        raise ValueError("what's the os??")
 
         if episode_score > max_score:
-            Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
+            if os.name == 'nt':
+                Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
+            elif os.name == 'posix':
+                Agent.save_models(path=result_path + "/", score=round(episode_score, 3))
+            else:
+                raise ValueError("what's the os??")
             max_score = episode_score
 
         print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
