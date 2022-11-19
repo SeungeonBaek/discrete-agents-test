@@ -264,7 +264,10 @@ if __name__ == '__main__':
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     result_path = parent_path + '/results/{env}/{agent}_{extension}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string
-    data_save_path = parent_path + '\\results\\{env}\\{agent}_{extension}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string + '\\'
+    if os.name == 'nt':
+        data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + time_string + '\\'
+    elif os.name == 'posix':
+        data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string + '/'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     if rl_config['wandb'] == True:
