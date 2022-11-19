@@ -78,6 +78,14 @@ def main_curriculum(env_config: Dict,
                 step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['position_y']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_1_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_1_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_2_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_2_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_3_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_3_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_4_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_4_pos_y']    = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['velocity_x']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['velocity_y']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['time_headway']     = np.zeros(max_step, dtype=np.float32)
@@ -110,7 +118,11 @@ def main_curriculum(env_config: Dict,
             next_curriculum_flag = False
 
         obs = env.reset()
-        obs = np.array(obs)
+        if env_config['env_name'] == 'custom_highway-v0':
+            obs = np.array(obs[0])
+        else:
+            obs = np.array(obs)
+        
         obs = obs.reshape(-1)
         if rl_custom_config['use_prev_obs']:
             enlonged_obs = np.concatenate(obs, obs)
@@ -128,10 +140,13 @@ def main_curriculum(env_config: Dict,
             else:
                 action = Agent.action(obs)
 
-            if env_config['env_name'] == 'LunarLander-v2' or 'custom_highway-v0':
+            # obs parsing per env
+            if env_config['env_name'] == 'LunarLander-v2' or env_config['env_name'] == 'highway-v0':
                 obs, reward, done, _ = env.step(action)
-
-            elif env_config['env_name'] == None: # Todo: gym version issue
+            elif env_config['env_name'] == 'custom_highway-v0':
+                obs, reward, done, _ = env.step(action)
+                obs, origin_obs = obs[0], obs[1]
+            elif env_config['env_name'] == None: # Todo
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
@@ -184,16 +199,20 @@ def main_curriculum(env_config: Dict,
                 step_data[str(episode_num-1)]['num_of_step'][episode_step] = episode_step
 
                 if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
-                    step_data[str(episode_num-1)]['position_x'][episode_step]   = \
-                        (obs[1] * (feature_range_x[1] - feature_range_x[0]) + (feature_range_x[1] - feature_range_x[0])) / 2 + feature_range_x[0]
-                    step_data[str(episode_num-1)]['position_y'][episode_step]   = \
-                        (obs[2] * (feature_range_y[1] - feature_range_y[0]) + (feature_range_y[1] - feature_range_y[0])) / 2 + feature_range_y[0]
-                    step_data[str(episode_num-1)]['velocity_x'][episode_step]   = \
-                        (obs[3] * (feature_range_vx[1] - feature_range_vx[0]) + (feature_range_vx[1] - feature_range_vx[0])) / 2 + feature_range_vx[0]
-                    step_data[str(episode_num-1)]['velocity_y'][episode_step]   = \
-                        (obs[4] * (feature_range_vy[1] - feature_range_vy[0]) + (feature_range_vy[1] - feature_range_vy[0])) / 2 + feature_range_vy[0]
-                    step_data[str(episode_num-1)]['time_headway'][episode_step] = obs[0]
-                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step] = obs[0]
+                    step_data[str(episode_num-1)]['position_x'][episode_step]       = origin_obs[0][1]
+                    step_data[str(episode_num-1)]['position_y'][episode_step]       = origin_obs[0][2]
+                    step_data[str(episode_num-1)]['other_1_pos_x'][episode_step]    = origin_obs[1][1]
+                    step_data[str(episode_num-1)]['other_1_pos_y'][episode_step]    = origin_obs[1][2]
+                    step_data[str(episode_num-1)]['other_2_pos_x'][episode_step]    = origin_obs[2][1]
+                    step_data[str(episode_num-1)]['other_2_pos_y'][episode_step]    = origin_obs[2][2]
+                    step_data[str(episode_num-1)]['other_3_pos_x'][episode_step]    = origin_obs[3][1]
+                    step_data[str(episode_num-1)]['other_3_pos_y'][episode_step]    = origin_obs[3][2]
+                    step_data[str(episode_num-1)]['other_4_pos_x'][episode_step]    = origin_obs[4][1]
+                    step_data[str(episode_num-1)]['other_4_pos_y'][episode_step]    = origin_obs[4][2]
+                    step_data[str(episode_num-1)]['velocity_x'][episode_step]       = origin_obs[0][3]
+                    step_data[str(episode_num-1)]['velocity_y'][episode_step]       = origin_obs[0][4]
+                    step_data[str(episode_num-1)]['time_headway'][episode_step]     = obs[0]
+                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step]   = obs[0]
                     step_data[str(episode_num-1)]['lane_change_flag'][episode_step] = True if action == 0 or action == 2 else False
 
         env.close()
