@@ -47,7 +47,10 @@ def main_curriculum(env_config: Dict,
     RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
     if rl_custom_config['use_learned_model']:
-        Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
+        if os.name == 'nt':
+            Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
+        elif os.name == 'posix':
+            Agent.load_models(path=result_path + "/" + str(rl_custom_config['learned_model_score']) + "_model")
     else:
         pass
 
@@ -81,6 +84,14 @@ def main_curriculum(env_config: Dict,
                 step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['position_y']       = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_1_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_1_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_2_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_2_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_3_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_3_pos_y']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_4_pos_x']    = np.zeros(max_step, dtype=np.float32)
+                step_data[str(episode_num)]['other_4_pos_y']    = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['velocity_x']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['velocity_y']       = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['time_headway']     = np.zeros(max_step, dtype=np.float32)
@@ -89,7 +100,8 @@ def main_curriculum(env_config: Dict,
 
     total_step = 0
     max_score = 0
-    episode_score_array = deque(maxlen=10)
+    episode_score_array_len = 10
+    episode_score_array = deque(maxlen=episode_score_array_len)
     current_curriculum = -1
     next_curriculum_flag = True
 
@@ -113,7 +125,11 @@ def main_curriculum(env_config: Dict,
             next_curriculum_flag = False
 
         obs = env.reset()
-        obs = np.array(obs)
+        if env_config['env_name'] == 'custom_highway-v0':
+            obs = np.array(obs[0])
+        else:
+            obs = np.array(obs)
+            
         obs = obs.reshape(-1)
         if rl_custom_config['use_prev_obs']:
             enlonged_obs = np.concatenate(obs, obs)
@@ -131,10 +147,13 @@ def main_curriculum(env_config: Dict,
             else:
                 action = Agent.action(obs)
 
-            if env_config['env_name'] == 'LunarLander-v2' or 'custom_highway-v0':
+            #obs parsing per env
+            if env_config['env_name'] == 'LunarLander-v2' or env_config['env_name'] == 'highway-v0':
                 obs, reward, done, _ = env.step(action)
-
-            elif env_config['env_name'] == None: # Todo: gym version issue
+            elif env_config['env_name'] == 'custom_highway-v0':
+                obs, reward, done, _ = env.step(action)
+                obs, origin_obs = obs[0], obs[1]
+            elif env_config['env_name'] == None: # Todo
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
@@ -187,18 +206,22 @@ def main_curriculum(env_config: Dict,
                 step_data[str(episode_num-1)]['num_of_step'][episode_step] = episode_step
 
                 if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
-                    step_data[str(episode_num-1)]['position_x'][episode_step]   = \
-                        (obs[1] * (feature_range_x[1] - feature_range_x[0]) + (feature_range_x[1] - feature_range_x[0])) / 2 + feature_range_x[0]
-                    step_data[str(episode_num-1)]['position_y'][episode_step]   = \
-                        (obs[2] * (feature_range_y[1] - feature_range_y[0]) + (feature_range_y[1] - feature_range_y[0])) / 2 + feature_range_y[0]
-                    step_data[str(episode_num-1)]['velocity_x'][episode_step]   = \
-                        (obs[3] * (feature_range_vx[1] - feature_range_vx[0]) + (feature_range_vx[1] - feature_range_vx[0])) / 2 + feature_range_vx[0]
-                    step_data[str(episode_num-1)]['velocity_y'][episode_step]   = \
-                        (obs[4] * (feature_range_vy[1] - feature_range_vy[0]) + (feature_range_vy[1] - feature_range_vy[0])) / 2 + feature_range_vy[0]
-                    step_data[str(episode_num-1)]['time_headway'][episode_step] = obs[0]
-                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step] = obs[0]
+                    step_data[str(episode_num-1)]['position_x'][episode_step]       = origin_obs[0][1]
+                    step_data[str(episode_num-1)]['position_y'][episode_step]       = origin_obs[0][2]
+                    step_data[str(episode_num-1)]['other_1_pos_x'][episode_step]    = origin_obs[1][1]
+                    step_data[str(episode_num-1)]['other_1_pos_y'][episode_step]    = origin_obs[1][2]
+                    step_data[str(episode_num-1)]['other_2_pos_x'][episode_step]    = origin_obs[2][1]
+                    step_data[str(episode_num-1)]['other_2_pos_y'][episode_step]    = origin_obs[2][2]
+                    step_data[str(episode_num-1)]['other_3_pos_x'][episode_step]    = origin_obs[3][1]
+                    step_data[str(episode_num-1)]['other_3_pos_y'][episode_step]    = origin_obs[3][2]
+                    step_data[str(episode_num-1)]['other_4_pos_x'][episode_step]    = origin_obs[4][1]
+                    step_data[str(episode_num-1)]['other_4_pos_y'][episode_step]    = origin_obs[4][2]
+                    step_data[str(episode_num-1)]['velocity_x'][episode_step]       = origin_obs[0][3]
+                    step_data[str(episode_num-1)]['velocity_y'][episode_step]       = origin_obs[0][4]
+                    step_data[str(episode_num-1)]['time_headway'][episode_step]     = obs[0]
+                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step]   = obs[0]
                     step_data[str(episode_num-1)]['lane_change_flag'][episode_step] = True if action == 0 or action == 2 else False
-
+                    
         env.close()
 
         rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode=rl_custom_config['use_learned_model'])
@@ -214,17 +237,26 @@ def main_curriculum(env_config: Dict,
 
                 episode_step_data_df = pd.DataFrame(step_data[str(episode_num-1)])
                 if os.path.exists(data_save_path + "step_data"):
-                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    if os.name == 'nt':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    elif os.name == 'posix':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
                 else:
                     os.makedirs(data_save_path + "step_data")
-                    episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    if os.name == 'nt':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+                    elif os.name == 'posix':
+                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
 
         if episode_score > max_score:
-            Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
+            if os.name == 'nt':
+                Agent.save_models(path=result_path + "\\", score=round(episode_score, 3))
+            elif os.name == 'posix':
+                Agent.save_models(path=result_path + "/", score=round(episode_score, 3))
             max_score = episode_score
 
         # Curriculum control
-        if sum(episode_score_array)/len(episode_score_array) > max_step * 0.9:
+        if sum(episode_score_array)/episode_score_array_len > max_step * 0.9:
             next_curriculum_flag = True
         
         print('epi_num : {episode}, epi_step : {step}, score : {score}, mean_reward : {mean_reward}'.format(episode= episode_num, step= episode_step, score = episode_score, mean_reward=episode_score/episode_step))
@@ -255,7 +287,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 1
+    agent_switch = 11
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
@@ -277,8 +309,11 @@ if __name__ == '__main__':
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-    result_path = parent_path + '/results/{env}/{agent}_{extension}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string
-    data_save_path = parent_path + '\\results\\{env}\\{agent}_{extension}_result\\'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string + '\\'
+    result_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string
+    if os.name == 'nt':
+        data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + time_string + "\\"
+    elif os.name == 'posix':
+        data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string + "/"
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     if rl_config['wandb'] == True:
