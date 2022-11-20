@@ -8,8 +8,10 @@ import seaborn as sns
 
 def loading_data(data_save_path: str, episode_num: int)-> Tuple[pd.DataFrame]:
     episode_data = pd.read_csv(data_save_path + "episode_data.csv", index_col=0)
-    step_data = pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0)
-
+    if os.name == 'nt':
+        step_data = pd.read_csv(data_save_path + f"\\step_data\\episode_{episode_num}_data.csv", index_col=0)
+    elif os.name == 'posix':
+        step_data = pd.read_csv(data_save_path + f"/step_data/episode_{episode_num}_data.csv", index_col=0)
     return episode_data, step_data
 
 
@@ -112,7 +114,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 1
+    agent_switch = 11
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
@@ -125,11 +127,13 @@ if __name__ == '__main__':
 
     if os.name == 'nt':
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\"
+        data_save_path = data_save_path + '2022-11-18_10-23-01\\'
     elif os.name == 'posix':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
+        data_save_path = data_save_path + '2022-11-18_10-23-01/'
 
     # Notice: you should change the time frame of data
-    data_save_path = data_save_path + '2022-11-18_10-23-01\\'
+    
 
     episode_data, step_data = loading_data(data_save_path, episode_num)
     plot_highway(env_config['env_name'], agent_config['agent_name'], episode_data, step_data, avg_window, end_of_episode, end_of_step)
