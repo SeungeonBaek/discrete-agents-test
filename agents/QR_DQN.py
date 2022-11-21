@@ -211,7 +211,7 @@ class Agent:
         else:
             action = np.random.randint(self.act_space)
 
-        return action
+        return action, value_dist.numpy()
 
     def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0

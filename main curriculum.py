@@ -300,7 +300,7 @@ if __name__ == '__main__':
                             'ego_vehicle_spd': [1, 2, 3],
                             'other_vehicle_spd': [1, 2, 3],
                             'vehicles_count':[1, 2, 3],
-                            'vehicles_density': [1, 2, 3]} # TBD
+                            'vehicles_density': [1, 2, 3]}
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

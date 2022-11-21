@@ -197,7 +197,7 @@ class Agent:
             action = np.random.randint(self.act_space)
         # print(f'in action, action: {np.shape(np.array(action))}')
 
-        return action
+        return action, values.numpy()
 
     def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0

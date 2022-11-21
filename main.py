@@ -27,7 +27,8 @@ def main(env_config: Dict,
          rl_loader: RLLoader):
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
-    print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
+    env_name = env_config['env_name']
+    print(f"env_name : {env_name}, obs_space : {env_obs_space}, act_space : {env_act_space}")
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -49,10 +50,12 @@ def main(env_config: Dict,
     else:
         pass
 
-    print('agent_name: {}'.format(agent_config['agent_name']))
+    agent_name = agent_config['agent_name']
+    extension_name = Agent.extension_name
+    print(f"agent_name: {agent_name}, extension_name: {extension_name}")
 
     # define max step
-    if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
+    if 'highway-v0' in env_name: # vanilla highway and custom highway
         max_step = env.config['duration'] * env.config['policy_frequency']
         feature_range_x = env.config['observation']['features_range']['x']
         feature_range_y = env.config['observation']['features_range']['y']
@@ -72,9 +75,16 @@ def main(env_config: Dict,
         step_data = dict()
         for episode_num in range(env_config['max_episode']):
             step_data[str(episode_num)] = dict()
-            step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
+            step_data[str(episode_num)]['num_of_step'] = np.zeros(max_step, dtype=np.float32)
 
-        if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
+        for act_idx in range(act_space):
+            if agent_name == 'QR_DQN' or agent_name == 'QUOTA' or agent_name == 'IQN':
+                for quant_idx in range(Agent.quantile_num):
+                    step_data[str(episode_num)][f'value_{act_idx}_{quant_idx}'] = np.zeros(max_step, dtype=np.float32)
+            else:
+                step_data[str(episode_num)][f'value_{act_idx}'] = np.zeros(max_step, dtype=np.float32)
+
+        if 'highway-v0' in env_name: # vanilla highway and custom highway
             for episode_num in range(env_config['max_episode']):
                 step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
                 step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
@@ -106,7 +116,7 @@ def main(env_config: Dict,
         episode_rewards = []
 
         obs = env.reset()
-        if env_config['env_name'] == 'custom_highway-v0':
+        if env_name == 'custom_highway-v0':
             obs = np.array(obs[0])
         else:
             obs = np.array(obs)
@@ -124,17 +134,19 @@ def main(env_config: Dict,
             total_step += 1
 
             if rl_custom_config['use_prev_obs']:
-                action = Agent.action(enlonged_obs)
+                action, action_values = Agent.action(enlonged_obs)
             else:
-                action = Agent.action(obs)
+                action, action_values = Agent.action(obs)
 
             # obs parsing per env
-            if env_config['env_name'] == 'LunarLander-v2' or env_config['env_name'] == 'highway-v0':
+            if env_name == 'LunarLander-v2' or env_name == 'highway-v0':
                 obs, reward, done, _ = env.step(action)
-            elif env_config['env_name'] == 'custom_highway-v0':
+
+            elif env_name == 'custom_highway-v0':
                 obs, reward, done, _ = env.step(action)
                 obs, origin_obs = obs[0], obs[1]
-            elif env_config['env_name'] == None: # Todo
+
+            elif env_name == None: # Todo
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
@@ -185,7 +197,14 @@ def main(env_config: Dict,
             if rl_config['csv_logging']:
                 step_data[str(episode_num-1)]['num_of_step'][episode_step] = episode_step
 
-                if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
+                for act_idx in range(act_space):
+                    if agent_name == 'QR_DQN' or agent_name == 'QUOTA' or agent_name == 'IQN':
+                        for quant_idx in range(Agent.quantile_num):
+                            step_data[str(episode_num-1)][f'value_{act_idx}_{quant_idx}'] = action_values[0][act_idx][quant_idx]
+                    else:
+                        step_data[str(episode_num-1)][f'value_{act_idx}'] = action_values[0][act_idx]
+
+                if 'highway-v0' in env_name: # vanilla highway and custom highway
                     step_data[str(episode_num-1)]['position_x'][episode_step]       = origin_obs[0][1]
                     step_data[str(episode_num-1)]['position_y'][episode_step]       = origin_obs[0][2]
                     step_data[str(episode_num-1)]['other_1_pos_x'][episode_step]    = origin_obs[1][1]
@@ -258,7 +277,7 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 1
+    agent_switch = 9
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
