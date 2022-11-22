@@ -49,7 +49,7 @@ def main(env_config: Dict,
         if os.name == 'nt':
             Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
         elif os.name == 'posix':
-            Agent.load_models(path=result_path + "/" + str(rl_custom_config['learned_model_score']) + "_model")
+            Agent.load_models(path=result_path + "/" + "score_" + str(rl_custom_config['learned_model_score']) + "_model")
         else:
             raise ValueError("what's the os??")
     else:
@@ -277,11 +277,14 @@ if __name__ == '__main__':
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': True, 'wandb': True, 'tensorboard': False}
-    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_model_score': 59.009}
+    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': False}
+    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': True, 'learned_model_score': 77.583, 'learned_model_time':'2022-11-20_21-07-36'}
 
     parent_path = str(os.path.abspath(''))
-    time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    if rl_custom_config['use_learned_model']:
+        time_string = rl_custom_config['learned_model_time']
+    else:
+        time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     result_path = parent_path + '/results/{env}/{agent}_{extension}_result/'.format(env=env_config['env_name'], agent=agent_config['agent_name'], extension=agent_config['extension']['name']) + time_string
     if os.name == 'nt':
