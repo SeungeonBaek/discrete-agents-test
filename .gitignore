@@ -1,6 +1,8 @@
 # files
 __pycache__
 main_nota.py
+agent_env_config.py
+utils/rl_loader.py
 
 # directory
 10-gSDE/
