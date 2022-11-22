@@ -170,7 +170,7 @@ def main(env_config: Dict,
 
         if rl_config['csv_logging']:
             state_logger.episode_logger(episode_score, episode_step)
-            state_logger.save_data()
+            state_logger.save_data(episode_num)
 
         if episode_score > max_score:
             if os.name == 'nt':
@@ -229,6 +229,6 @@ if __name__ == '__main__':
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
-    state_logger = StateLogger(env_config, agent_config, rl_config)
+    state_logger = StateLogger(env_config, agent_config, rl_config, data_save_path)
 
-    main(env_config, agent_config, rl_config, rl_custom_config, result_path, data_save_path, rl_logger, rl_loader)
+    main(env_config, agent_config, rl_config, rl_custom_config, result_path, rl_logger, rl_loader)
