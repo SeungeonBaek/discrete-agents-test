@@ -16,15 +16,16 @@ if __name__ == "__main__":
 from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
 
+from utils.state_logger import StateLogger
 
 def main(env_config: Dict,
          agent_config: Dict,
          rl_config: Dict,
          rl_custom_config: Dict,
          result_path:str,
-         data_save_path: str,
          rl_logger: RLLogger,
-         rl_loader: RLLoader):
+         rl_loader: RLLoader,
+         state_logger: StateLogger):
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
     env_name = env_config['env_name']
@@ -67,41 +68,7 @@ def main(env_config: Dict,
 
     # csv logging
     if rl_config['csv_logging']:
-        episode_data = dict()
-        episode_data['episode_score'] = np.zeros(env_config['max_episode'], dtype=np.float32)
-        episode_data['mean_reward']   = np.zeros(env_config['max_episode'], dtype=np.float32)
-        episode_data['episode_step']  = np.zeros(env_config['max_episode'], dtype=np.float32)
-
-        step_data = dict()
-        for episode_num in range(env_config['max_episode']):
-            step_data[str(episode_num)] = dict()
-            step_data[str(episode_num)]['num_of_step'] = np.zeros(max_step, dtype=np.float32)
-
-        for act_idx in range(act_space):
-            if agent_name == 'QR_DQN' or agent_name == 'QUOTA' or agent_name == 'IQN':
-                for quant_idx in range(Agent.quantile_num):
-                    step_data[str(episode_num)][f'value_{act_idx}_{quant_idx}'] = np.zeros(max_step, dtype=np.float32)
-            else:
-                step_data[str(episode_num)][f'value_{act_idx}'] = np.zeros(max_step, dtype=np.float32)
-
-        if 'highway-v0' in env_name: # vanilla highway and custom highway
-            for episode_num in range(env_config['max_episode']):
-                step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['position_y']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_1_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_1_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_2_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_2_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_3_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_3_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_4_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_4_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['velocity_x']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['velocity_y']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['time_headway']     = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['inverse_of_ttc']   = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['lane_change_flag'] = np.zeros(max_step, dtype=np.float32)
+        state_logger.initialize_memory(env_config['max_episode'], max_step, act_space, Agent.quantile_num)
 
     total_step = 0
     max_score = 0
@@ -195,57 +162,15 @@ def main(env_config: Dict,
                 rl_logger.step_logging(Agent, rl_custom_config['use_learned_model'])
 
             if rl_config['csv_logging']:
-                step_data[str(episode_num-1)]['num_of_step'][episode_step] = episode_step
-
-                for act_idx in range(act_space):
-                    if agent_name == 'QR_DQN' or agent_name == 'QUOTA' or agent_name == 'IQN':
-                        for quant_idx in range(Agent.quantile_num):
-                            step_data[str(episode_num-1)][f'value_{act_idx}_{quant_idx}'] = action_values[0][act_idx][quant_idx]
-                    else:
-                        step_data[str(episode_num-1)][f'value_{act_idx}'] = action_values[0][act_idx]
-
-                if 'highway-v0' in env_name: # vanilla highway and custom highway
-                    step_data[str(episode_num-1)]['position_x'][episode_step]       = origin_obs[0][1]
-                    step_data[str(episode_num-1)]['position_y'][episode_step]       = origin_obs[0][2]
-                    step_data[str(episode_num-1)]['other_1_pos_x'][episode_step]    = origin_obs[1][1]
-                    step_data[str(episode_num-1)]['other_1_pos_y'][episode_step]    = origin_obs[1][2]
-                    step_data[str(episode_num-1)]['other_2_pos_x'][episode_step]    = origin_obs[2][1]
-                    step_data[str(episode_num-1)]['other_2_pos_y'][episode_step]    = origin_obs[2][2]
-                    step_data[str(episode_num-1)]['other_3_pos_x'][episode_step]    = origin_obs[3][1]
-                    step_data[str(episode_num-1)]['other_3_pos_y'][episode_step]    = origin_obs[3][2]
-                    step_data[str(episode_num-1)]['other_4_pos_x'][episode_step]    = origin_obs[4][1]
-                    step_data[str(episode_num-1)]['other_4_pos_y'][episode_step]    = origin_obs[4][2]
-                    step_data[str(episode_num-1)]['velocity_x'][episode_step]       = origin_obs[0][3]
-                    step_data[str(episode_num-1)]['velocity_y'][episode_step]       = origin_obs[0][4]
-                    step_data[str(episode_num-1)]['time_headway'][episode_step]     = obs[0]
-                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step]   = obs[0]
-                    step_data[str(episode_num-1)]['lane_change_flag'][episode_step] = True if action == 0 or action == 2 else False
+                state_logger.step_logger(episode_num, episode_step, origin_obs, obs, action_values, action)
 
         env.close()
 
         rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode=rl_custom_config['use_learned_model'])
 
         if rl_config['csv_logging']:
-            episode_data['episode_score'][episode_num-1] = episode_score
-            episode_data['mean_reward'][episode_num-1]   = episode_score/episode_step
-            episode_data['episode_step'][episode_num-1]  = episode_step
-
-            if episode_num % 10 == 0:
-                episode_data_df = pd.DataFrame(episode_data)
-                episode_data_df.to_csv(data_save_path+'episode_data.csv', mode='w',encoding='UTF-8' ,compression=None)
-
-                episode_step_data_df = pd.DataFrame(step_data[str(episode_num-1)])
-                if os.path.exists(data_save_path + "step_data"):
-                    if os.name == 'nt':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                    elif os.name == 'posix':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                else:
-                    os.makedirs(data_save_path + "step_data")
-                    if os.name == 'nt':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                    elif os.name == 'posix':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+            state_logger.episode_logger(episode_score, episode_step)
+            state_logger.save_data()
 
         if episode_score > max_score:
             if os.name == 'nt':
@@ -303,5 +228,7 @@ if __name__ == '__main__':
 
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
+
+    state_logger = StateLogger(env_config, agent_config, rl_config)
 
     main(env_config, agent_config, rl_config, rl_custom_config, result_path, data_save_path, rl_logger, rl_loader)
