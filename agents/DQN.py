@@ -176,26 +176,30 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray)-> NDArray:
+    def action(self, obs: NDArray, is_test: bool)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         values = self.critic_main(obs)
         # print(f'in action, values: {np.shape(np.array(values))}')
 
-        random_val = np.random.rand()
-        if self.update_step > self.warm_up:
-            if random_val > self.epsilon:
-                action = np.argmax(values.numpy())
+        if is_test == True:
+            action = np.argmax(values.numpy())
+            
+        else:
+            random_val = np.random.rand()
+            if self.update_step > self.warm_up:
+                if random_val > self.epsilon:
+                    action = np.argmax(values.numpy())
+                else:
+                    action = np.random.randint(self.act_space)
+
+                self.epsilon *= self.epsilon_decaying_rate
+                if self.epsilon < self.min_epsilon:
+                    self.epsilon = self.min_epsilon
+
             else:
                 action = np.random.randint(self.act_space)
-
-            self.epsilon *= self.epsilon_decaying_rate
-            if self.epsilon < self.min_epsilon:
-                self.epsilon = self.min_epsilon
-
-        else:
-            action = np.random.randint(self.act_space)
-        # print(f'in action, action: {np.shape(np.array(action))}')
+            # print(f'in action, action: {np.shape(np.array(action))}')
 
         return action, values.numpy()
 
@@ -440,11 +444,11 @@ class Agent:
 
     def load_models(self, path: str)-> None:
         print('Load Model Path : ', path)
-        self.critic_main.load_weights(path, "_critic_main")
-        self.critic_target.load_weights(path, "_critic_target")
+        self.critic_main.load_weights(path + "_critic_main.h5")
+        self.critic_target.load_weights(path + "_critic_target.h5")
 
     def save_models(self, path: str, score: float)-> None:
         save_path = path + "score_" + str(score) + "_model"
         print('Save Model Path : ', save_path)
-        self.critic_main.save_weights(save_path, "_critic_main")
-        self.critic_target.save_weights(save_path, "_critic_target")
+        self.critic_main.save_weights(save_path + "_critic_main.h5")
+        self.critic_target.save_weights(save_path + "_critic_target.h5")

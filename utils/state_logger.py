@@ -28,9 +28,8 @@ class StateLogger():
                           max_episode: int,
                           max_step: int,
                           action_space: int,
-                          quantile_num: int)-> None:
+                          )-> None:
         self.action_space = action_space
-        self.quantile_num = quantile_num
 
         self.episode_data['episode_score'] = np.zeros(max_episode, dtype=np.float32)
         self.episode_data['mean_reward']   = np.zeros(max_episode, dtype=np.float32)
@@ -42,6 +41,7 @@ class StateLogger():
 
         for act_idx in range(self.action_space):
             if self.agent_name == 'QR_DQN' or self.agent_name == 'QUOTA' or self.agent_name == 'IQN':
+                self.quantile_num = self.agent_config['quantile_num']
                 for quant_idx in range(self.quantile_num):
                     self.step_data[str(episode_num)][f'value_{act_idx}_{quant_idx}'] = np.zeros(max_step, dtype=np.float32)
             else:

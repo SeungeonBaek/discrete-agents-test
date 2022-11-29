@@ -1,12 +1,9 @@
 import os, sys
 from datetime import datetime
-from pprint import pprint
 from typing import Dict
 from collections import deque
-import time
 
 import numpy as np
-import pandas as pd
 
 from tensorboardX import SummaryWriter
 
@@ -16,20 +13,23 @@ if __name__ == "__main__":
 from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
 
+from utils.state_logger import StateLogger
 
 def main_curriculum(env_config: Dict,
-         agent_config: Dict,
-         rl_config: Dict,
-         rl_custom_config: Dict,
-         curriculum_config: Dict,
-         result_path:str,
-         data_save_path: str,
-         rl_logger: RLLogger,
-         rl_loader: RLLoader):
+                    agent_config: Dict,
+                    rl_config: Dict,
+                    rl_custom_config: Dict,
+                    learned_model_path: str,
+                    curriculum_config: Dict,
+                    result_path: str,
+                    rl_logger: RLLogger,
+                    rl_loader: RLLoader,
+                    state_logger: StateLogger):
 
     # Env
     env, env_obs_space, env_act_space = rl_loader.env_loader()
-    print(f"env_name : {env_config['env_name']}, obs_space : {env_obs_space}, act_space : {env_act_space}")
+    env_name = env_config['env_name']
+    print(f"env_name : {env_name}, obs_space : {env_obs_space}, act_space : {env_act_space}")
 
     if len(env_obs_space) > 1:
         obs_space = 1
@@ -44,14 +44,13 @@ def main_curriculum(env_config: Dict,
     RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
     if rl_custom_config['use_learned_model']:
-        if os.name == 'nt':
-            Agent.load_models(path=result_path + "\\" + str(rl_custom_config['learned_model_score']) + "_model")
-        elif os.name == 'posix':
-            Agent.load_models(path=result_path + "/" + str(rl_custom_config['learned_model_score']) + "_model")
+        Agent.load_models(path=learned_model_path + "score_" + str(rl_custom_config['learned_model_score']) + "_model")
     else:
         pass
 
-    print('agent_name: {}'.format(agent_config['agent_name']))
+    agent_name = agent_config['agent_name']
+    extension_name = Agent.extension_name
+    print(f"agent_name: {agent_name}, extension_name: {extension_name}")
 
     # define max step
     if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
@@ -66,37 +65,11 @@ def main_curriculum(env_config: Dict,
 
     # csv logging
     if rl_config['csv_logging']:
-        episode_data = dict()
-        episode_data['episode_score'] = np.zeros(env_config['max_episode'], dtype=np.float32)
-        episode_data['mean_reward']   = np.zeros(env_config['max_episode'], dtype=np.float32)
-        episode_data['episode_step']  = np.zeros(env_config['max_episode'], dtype=np.float32)
-
-        step_data = dict()
-        for episode_num in range(env_config['max_episode']):
-            step_data[str(episode_num)] = dict()
-            step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
-
-        if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
-            for episode_num in range(env_config['max_episode']):
-                step_data[str(episode_num)]['num_of_step']      = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['position_x']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['position_y']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_1_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_1_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_2_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_2_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_3_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_3_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_4_pos_x']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['other_4_pos_y']    = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['velocity_x']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['velocity_y']       = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['time_headway']     = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['inverse_of_ttc']   = np.zeros(max_step, dtype=np.float32)
-                step_data[str(episode_num)]['lane_change_flag'] = np.zeros(max_step, dtype=np.float32)
+        state_logger.initialize_memory(env_config['max_episode'], max_step, act_space)
 
     total_step = 0
     max_score = 0
+
     episode_score_array = deque(maxlen=10)
     current_curriculum = -1
     next_curriculum_flag = True
@@ -121,14 +94,14 @@ def main_curriculum(env_config: Dict,
             next_curriculum_flag = False
 
         obs = env.reset()
-        if env_config['env_name'] == 'custom_highway-v0':
+        if env_name == 'custom_highway-v0':
             obs = np.array(obs[0])
         else:
             obs = np.array(obs)
         
         obs = obs.reshape(-1)
         if rl_custom_config['use_prev_obs']:
-            enlonged_obs = np.concatenate(obs, obs)
+            enlonged_obs = np.concatenate((obs, obs))
 
         action = None
 
@@ -139,17 +112,19 @@ def main_curriculum(env_config: Dict,
             total_step += 1
 
             if rl_custom_config['use_prev_obs']:
-                action = Agent.action(enlonged_obs)
+                action, action_values = Agent.action(enlonged_obs)
             else:
-                action = Agent.action(obs)
+                action, action_values = Agent.action(obs)
 
             # obs parsing per env
-            if env_config['env_name'] == 'LunarLander-v2' or env_config['env_name'] == 'highway-v0':
+            if env_name == 'LunarLander-v2' or env_name == 'highway-v0':
                 obs, reward, done, _ = env.step(action)
-            elif env_config['env_name'] == 'custom_highway-v0':
+
+            elif env_name == 'custom_highway-v0':
                 obs, reward, done, _ = env.step(action)
                 obs, origin_obs = obs[0], obs[1]
-            elif env_config['env_name'] == None: # Todo
+
+            elif env_name == None: # Todo
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
@@ -158,9 +133,9 @@ def main_curriculum(env_config: Dict,
 
             if rl_custom_config['use_prev_obs']:
                 if episode_step >= 2:
-                    enlonged_obs = np.concatenate(prev_obs, obs)
+                    enlonged_obs = np.concatenate((prev_obs, obs))
                 else:
-                    enlonged_obs = np.concatenate(obs, obs)
+                    enlonged_obs = np.concatenate((obs, obs))
 
             action = np.array(action)
 
@@ -186,7 +161,6 @@ def main_curriculum(env_config: Dict,
                 prev_enlonged_obs = enlonged_obs
 
             prev_obs = obs
-            # pprint(f"prev_obs:{prev_obs}")
             prev_action = action
 
             if episode_step >= max_step:
@@ -199,50 +173,15 @@ def main_curriculum(env_config: Dict,
                 rl_logger.step_logging(Agent, rl_custom_config['use_learned_model'])
 
             if rl_config['csv_logging']:
-                step_data[str(episode_num-1)]['num_of_step'][episode_step] = episode_step
-
-                if 'highway-v0' in env_config['env_name']: # vanilla highway and custom highway
-                    step_data[str(episode_num-1)]['position_x'][episode_step]       = origin_obs[0][1]
-                    step_data[str(episode_num-1)]['position_y'][episode_step]       = origin_obs[0][2]
-                    step_data[str(episode_num-1)]['other_1_pos_x'][episode_step]    = origin_obs[1][1]
-                    step_data[str(episode_num-1)]['other_1_pos_y'][episode_step]    = origin_obs[1][2]
-                    step_data[str(episode_num-1)]['other_2_pos_x'][episode_step]    = origin_obs[2][1]
-                    step_data[str(episode_num-1)]['other_2_pos_y'][episode_step]    = origin_obs[2][2]
-                    step_data[str(episode_num-1)]['other_3_pos_x'][episode_step]    = origin_obs[3][1]
-                    step_data[str(episode_num-1)]['other_3_pos_y'][episode_step]    = origin_obs[3][2]
-                    step_data[str(episode_num-1)]['other_4_pos_x'][episode_step]    = origin_obs[4][1]
-                    step_data[str(episode_num-1)]['other_4_pos_y'][episode_step]    = origin_obs[4][2]
-                    step_data[str(episode_num-1)]['velocity_x'][episode_step]       = origin_obs[0][3]
-                    step_data[str(episode_num-1)]['velocity_y'][episode_step]       = origin_obs[0][4]
-                    step_data[str(episode_num-1)]['time_headway'][episode_step]     = obs[0]
-                    step_data[str(episode_num-1)]['inverse_of_ttc'][episode_step]   = obs[0]
-                    step_data[str(episode_num-1)]['lane_change_flag'][episode_step] = True if action == 0 or action == 2 else False
+                state_logger.step_logger(episode_num, episode_step, origin_obs, obs, action_values, action)
 
         env.close()
 
         rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode=rl_custom_config['use_learned_model'])
 
         if rl_config['csv_logging']:
-            episode_data['episode_score'][episode_num-1] = episode_score
-            episode_data['mean_reward'][episode_num-1]   = episode_score/episode_step
-            episode_data['episode_step'][episode_num-1]  = episode_step
-
-            if episode_num % 10 == 0:
-                episode_data_df = pd.DataFrame(episode_data)
-                episode_data_df.to_csv(data_save_path+'episode_data.csv', mode='w',encoding='UTF-8' ,compression=None)
-
-                episode_step_data_df = pd.DataFrame(step_data[str(episode_num-1)])
-                if os.path.exists(data_save_path + "step_data"):
-                    if os.name == 'nt':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                    elif os.name == 'posix':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                else:
-                    os.makedirs(data_save_path + "step_data")
-                    if os.name == 'nt':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data\\episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
-                    elif os.name == 'posix':
-                        episode_step_data_df.to_csv(data_save_path + f"step_data/episode_{episode_num-1}_data.csv", mode='w',encoding='UTF-8' ,compression=None)
+            state_logger.episode_logger(episode_num, episode_score, episode_step)
+            state_logger.save_data(episode_num)
 
         if episode_score > max_score:
             if os.name == 'nt':
@@ -288,7 +227,7 @@ if __name__ == '__main__':
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
-    rl_custom_config = {'use_prev_obs': True, 'use_learned_model': True, 'learned_model_score': 59.009}
+    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 59.009}
 
     """
     env.config['ego_vehicle_spd'] = 25 # default
@@ -306,9 +245,12 @@ if __name__ == '__main__':
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     result_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string
+
     if os.name == 'nt':
+        learned_model_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + rl_custom_config['learned_time'] + "\\"
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + time_string + "\\"
     elif os.name == 'posix':
+        learned_model_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + rl_custom_config['learned_time'] + "/"
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string + "/"
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
@@ -321,4 +263,6 @@ if __name__ == '__main__':
     rl_logger = RLLogger(agent_config, rl_config, summary_writer, wandb_session)
     rl_loader = RLLoader(env_config, agent_config)
 
-    main_curriculum(env_config, agent_config, rl_config, rl_custom_config, rl_curriculum_config, result_path, data_save_path, rl_logger, rl_loader)
+    state_logger = StateLogger(env_config, agent_config, rl_config, data_save_path)
+
+    main_curriculum(env_config, agent_config, rl_config, rl_custom_config, learned_model_path, rl_curriculum_config, result_path, rl_logger, rl_loader, state_logger)
