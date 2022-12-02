@@ -52,15 +52,15 @@ class RLLoader():
             env.config['simulation_frequency'] = 15
             env.config['policy_frequency'] = 2
             env.config['other_vehicles_type'] = "highway_env.vehicle.behavior.IDMVehicle"
-            env.config['ego_vehicle_spd'] = 18 # default
-            env.config['other_vehicle_spd'] = 18 # default
-            env.config['vehicles_count'] = 20
-            env.config['vehicles_density']= 0.64
+            env.config['ego_vehicle_spd'] = 20 # default
+            env.config['other_vehicle_spd'] = 20 # default
+            env.config['vehicles_count'] = 10
+            env.config['vehicles_density']= 0.4
             env.config['collision_reward'] = -1
-            env.config['reward_speed_range'] = [15,25]
+            env.config['reward_speed_range'] = [env.config['other_vehicle_spd'],env.config['other_vehicle_spd']+5]
             env.config['scaling'] = 5.5
             env.config['offscreen_rendering']= False
-            env.config['ego_spacing']= 1
+            env.config['ego_spacing']= 5
             env.config['right_lane_reward'] = 0
             env.config['real_time_rendering'] = False
 

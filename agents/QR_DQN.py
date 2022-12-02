@@ -191,27 +191,31 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray)-> NDArray: # Todo: check!
+    def action(self, obs: NDArray, is_test= False)-> NDArray: # Todo: check!
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         value_dist = self.critic_main(obs)
         # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
-        random_val = np.random.rand()
-        if self.update_step > self.warm_up:
-            if random_val > self.epsilon:
-                mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
-                action = np.argmax(mean_value)
+        if is_test == True:
+            mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+            action = np.argmax(mean_value)
+        else:
+            random_val = np.random.rand()
+            if self.update_step > self.warm_up:
+                if random_val > self.epsilon:
+                    mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+                    action = np.argmax(mean_value)
+                else:
+                    action = np.random.randint(self.act_space)
+
+                self.epsilon *= self.epsilon_decaying_rate
+                if self.epsilon < self.min_epsilon:
+                    self.epsilon = self.min_epsilon
             else:
                 action = np.random.randint(self.act_space)
 
-            self.epsilon *= self.epsilon_decaying_rate
-            if self.epsilon < self.min_epsilon:
-                self.epsilon = self.min_epsilon
-        else:
-            action = np.random.randint(self.act_space)
-
-        return action
+        return action, value_dist.numpy()
 
     def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0
@@ -465,11 +469,11 @@ class Agent:
 
     def load_models(self, path: str)-> None:
         print('Load Model Path : ', path)
-        self.critic_main.load_weights(path, "_critic_main")
-        self.critic_target.load_weights(path, "_critic_target")
+        self.critic_main.load_weights(path + "_critic_main")
+        self.critic_target.load_weights(path + "_critic_target")
 
     def save_models(self, path: str, score: float)-> None:
         save_path = path + "score_" + str(score) + "_model"
         print('Save Model Path : ', save_path)
-        self.critic_main.save_weights(save_path, "_critic_main")
-        self.critic_target.save_weights(save_path, "_critic_target")
+        self.critic_main.save_weights(save_path + "_critic_main")
+        self.critic_target.save_weights(save_path + "_critic_target")
