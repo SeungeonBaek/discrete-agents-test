@@ -444,11 +444,11 @@ class Agent:
 
     def load_models(self, path: str)-> None:
         print('Load Model Path : ', path)
-        self.critic_main.load_weights(path + "_critic_main.h5")
-        self.critic_target.load_weights(path + "_critic_target.h5")
+        self.critic_main.load_weights(path + "_critic_main")
+        self.critic_target.load_weights(path + "_critic_target")
 
     def save_models(self, path: str, score: float)-> None:
         save_path = path + "score_" + str(score) + "_model"
         print('Save Model Path : ', save_path)
-        self.critic_main.save_weights(save_path + "_critic_main.h5")
-        self.critic_target.save_weights(save_path + "_critic_target.h5")
+        self.critic_main.save_weights(save_path + "_critic_main")
+        self.critic_target.save_weights(save_path + "_critic_target")
