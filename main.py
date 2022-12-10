@@ -205,8 +205,9 @@ if __name__ == '__main__':
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': False}
-    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False,'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}
+    rl_config = {'csv_logging': True, 'wandb': True, 'tensorboard': False}
+    #rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False,'learned_model_time': '2022-12-02_18-22-28', 'learned_model_score': 79.209}
+    rl_custom_config = {'use_prev_obs': False, 'use_learned_model': True,'learned_model_time': '2022-12-06_17-46-56', 'learned_model_score': 79.707}
 
     parent_path = str(os.path.abspath(''))
     if rl_custom_config['use_learned_model']:
@@ -219,13 +220,13 @@ if __name__ == '__main__':
         learned_model_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + rl_custom_config['learned_time'] + "\\"
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + time_string + '\\'
     elif os.name == 'posix':
-        learned_model_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + rl_custom_config['learned_time'] + "/"
+        learned_model_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + rl_custom_config['learned_model_time'] + "/"
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string + '/'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
     if rl_config['wandb'] == True:
         import wandb
-        wandb_session = wandb.init(project="RL-test-densityC", job_type="train", name=time_string)
+        wandb_session = wandb.init(project="RL-test-CL", job_type="train", name=time_string)
     else:
         wandb_session = None
 

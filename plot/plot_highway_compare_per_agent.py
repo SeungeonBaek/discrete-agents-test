@@ -83,7 +83,6 @@ def plot_highway(env_name: str, agent_name: str, episode_data: pd.DataFrame, ste
         # axes_2['MeanReward'].set_xlim((-100, -10))
         # axes_2['MeanReward'].set_ylim((-100, -10))
         # axes_2[0].legend([])
-
     plt.show()
 
 
@@ -106,11 +105,11 @@ if __name__ == '__main__':
     """
 
     env_switch = 4
-    agent_switch = 1
+    agent_switch = 11
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    episode_nums = [9, 19] # which group of step data of episode you wanna observe?
+    episode_nums = [4009,6009,10009, 49989] # which group of step data of episode you wanna observe?
     avg_window = 5 # time window of moving average of socre ,mean reward data
     end_of_episode = 20 # clip the rl episode number
     end_of_step = 79 # clip the total step number
@@ -122,7 +121,7 @@ if __name__ == '__main__':
         data_save_path = data_save_path + '2022-11-13_00-08-05\\'
     elif os.name == 'posix':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
-        data_save_path = data_save_path + '2022-11-13_00-08-05/'
+        data_save_path = data_save_path + '2022-12-02_18-22-28/'
 
     # Notice: you should change the time frame of data
     

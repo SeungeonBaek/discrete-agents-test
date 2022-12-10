@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     # Env agent configs
     env_switch = 4
-    agent_switches = [1, 9]
+    agent_switches = [11, 9]
 
     env_configs = []
     agent_configs = []
@@ -120,9 +120,9 @@ if __name__ == '__main__':
         agent_configs.append(temp_agent_config)
 
     # Plotting config
-    episode_nums = [9, 19] # which group of step data of episode you wanna observe?
-    avg_window = 5 # time window of moving average of socre ,mean reward data
-    end_of_episode = 20 # clip the rl episode number
+    episode_nums = [40009, 40009] # which group of step data of episode you wanna observe?
+    avg_window = 10 # time window of moving average of socre ,mean reward data
+    end_of_episode = 45009 # clip the rl episode number
     end_of_step = 79 # clip the total step number
 
     # Data loading
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     if os.name == 'nt':
         time_stamps = ['2022-11-13_00-08-05\\', '2022-11-13_00-08-05\\']
     if os.name == 'posix':
-        time_stamps = ['2022-11-13_00-08-05/', '2022-11-13_00-08-05/']
+        time_stamps = ['2022-12-02_18-22-28/', '2022-12-04_11-04-42/']
     for env_config, agent_config, time_stamp in zip(env_configs, agent_configs, time_stamps):
         if os.name == 'nt':
             temp_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\"

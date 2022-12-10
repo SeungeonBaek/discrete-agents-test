@@ -5,7 +5,7 @@ def server_setup():
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
             import tensorflow as tf
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
             gpus = tf.config.experimental.list_physical_devices('GPU')
             if gpus:
                 try:

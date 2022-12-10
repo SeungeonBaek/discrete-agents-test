@@ -73,7 +73,7 @@ def main_curriculum(env_config: Dict,
 
     total_step = 0
     max_score = 0
-    episode_score_array_len = 10
+    episode_score_array_len = 20
     episode_score_array = deque(maxlen=episode_score_array_len)
     current_curriculum = -1
     next_curriculum_flag = True
@@ -90,8 +90,6 @@ def main_curriculum(env_config: Dict,
         # Curriculum control
         if next_curriculum_flag == True:
             current_curriculum += 1
-            if current_curriculum + 1 == curriculum_config['total_curriculum']:
-                next_curriculum_flag = False
             for key, val in curriculum_config.items():
                 if key == 'total_curriculum':
                     continue
@@ -195,7 +193,7 @@ def main_curriculum(env_config: Dict,
                 Agent.save_models(path=result_path + "/", score=round(episode_score, 3))
             max_score = episode_score
         episode_score_array.append(episode_score)
-        print(episode_score_array)
+        #print(episode_score_array)
 
         # Curriculum control
         if (next_curriculum_flag == False) & (sum(episode_score_array)/episode_score_array_len > max_step * 0.9):
@@ -234,7 +232,7 @@ if __name__ == '__main__':
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch)
 
-    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': False}
+    rl_config = {'csv_logging': True, 'wandb': True, 'tensorboard': False}
     rl_custom_config = {'use_prev_obs': False, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 59.009}
 
     """
@@ -243,11 +241,11 @@ if __name__ == '__main__':
     env.config['vehicles_count'] = 10
     env.config['vehicles_density']= 0.7
     """
-    rl_curriculum_config = {'total_curriculum': 3,
-                            'ego_vehicle_spd': [25, 25, 20],
-                            'other_vehicle_spd': [25, 25, 20],
-                            'vehicles_count':[10, 10, 10],
-                            'vehicles_density': [0.1, 0.2, 0.3]} # TBD
+    rl_curriculum_config = {'total_curriculum': 4,
+                            'ego_vehicle_spd': [25, 25, 20,15],
+                            'other_vehicle_spd': [25, 25, 20,15],
+                            'vehicles_count':[10, 10, 10,10],
+                            'vehicles_density': [0.1, 0.2, 0.3,0.6]} # TBD
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

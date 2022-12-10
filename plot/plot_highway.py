@@ -34,6 +34,7 @@ def plot_highway(env_name: str, agent_name: str, episode_data: pd.DataFrame, ste
     fig_2.suptitle(f'{env_name}, {agent_name}')
 
     palette = sns.cubehelix_palette(light=.5, n_colors=30, gamma=0.5)
+    #palette = sns.cubehelix_palette(light=.5, n_colors=30, gamma=0.5)
     # palette1 = sns.color_palette("mako_r", 6)
     colors = [[0.2, 0.2, 0.8], [0.8, 0.5, 0.2], [0.3, 0.8, 0.2]]
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
         data_save_path = data_save_path + '2022-11-18_10-23-01\\'
     elif os.name == 'posix':
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/"
-        data_save_path = data_save_path + '2022-11-18_10-23-01/'
+        data_save_path = data_save_path + '2022-12-02_18-22-28/'
 
     # Notice: you should change the time frame of data
     
