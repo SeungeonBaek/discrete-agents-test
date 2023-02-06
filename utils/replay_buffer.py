@@ -21,7 +21,7 @@ class ExperienceMemory():
         return len(self.storage)
 
     def add(self, data):
-        if self.next_idx >= len(self.storage):
+        if self.max_size >= len(self.storage):
             self.storage.append(data)
         else:
             self.storage[self.next_idx] = data
