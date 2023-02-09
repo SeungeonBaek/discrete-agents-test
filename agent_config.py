@@ -63,34 +63,35 @@ QR_DQN_NGU_agent_config['extension'] = {'name': 'NGU', 'use_DDQN':True, 'ngu_lr'
 QR_DQN_NGU_agent_config['feature_extractor'] = {'use_GNN': False, 'use_GNN': False, 'use_MPGNN': False, 'use_GCN': False}
 
 
-# IQN
-IQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
-                        'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-IQN_Vanilla_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
-
-
 # QUOTA
-QUOTA_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+QUOTA_Vanilla_agent_config = {'agent_name': 'QUOTA', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 QUOTA_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
 
 
-# RAINBOW_DQN
-RAINBOW_DQN_Vanilla_agent_config = {'agent_name': 'RAINBOW', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 1024, 
-                        'lr_actor': 0.001, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-RAINBOW_DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
+# IQN
+IQN_Vanilla_agent_config = {'agent_name': 'IQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+                        'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
+IQN_Vanilla_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
 
-RAINBOW_DQN_ICM_agent_config = {'agent_name': 'RAINBOW', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 1024, \
-                        'lr_actor': 0.001, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-RAINBOW_DQN_ICM_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
 
-RAINBOW_DQN_RND_agent_config = {'agent_name': 'RAINBOW', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 1024, \
-                        'lr_actor': 0.001, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-RAINBOW_DQN_RND_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
+# FQF
+FQF_Vanilla_agent_config = {'agent_name': 'FQF', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+                        'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
+FQF_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
 
-RAINBOW_DQN_NGU_agent_config = {'agent_name': 'RAINBOW', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'batch_size': 128, 'warm_up': 1024, \
-                        'lr_actor': 0.001, 'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
-RAINBOW_DQN_NGU_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
+
+# MMDQN
+MMDQN_Vanilla_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+                        'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
+MMDQN_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
+
+
+# C2D
+C2D_Vanilla_agent_config = {'agent_name': 'C2D', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+                        'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
+C2D_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
+
 
 # Agent57
 Agent57_Vanilla_agent_config = {'agent_name': 'Agent57', 'gamma' : 0.99, 'tau': 0.005, 'update_freq': 2, 'actor_update_freq': 2, 'batch_size': 128, 'warm_up': 1024, \
@@ -99,18 +100,18 @@ Agent57_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'gaussian_std': 
 
 
 # REDQ
-REDQ_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+REDQ_Vanilla_agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 REDQ_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
 
-REDQ_ICM_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+REDQ_ICM_agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 REDQ_ICM_agent_config['extension'] = {'name': 'TQC', 'gaussian_std': 0.1, 'noise_clip': 0.5, 'noise_reduction_rate': 0.999999}
 
-REDQ_RND_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+REDQ_RND_agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 REDQ_RND_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}
 
-REDQ_NGU_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
+REDQ_NGU_agent_config = {'agent_name': 'REDQ', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
                         'lr_critic': 0.002, 'buffer_size': 2000000, 'use_PER': True, 'use_ERE': False, 'reward_normalize' : False}
 REDQ_NGU_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_step_reset': 16}

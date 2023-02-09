@@ -9,11 +9,18 @@ lunar-lander
 procgen  
 highway-env  
 
+# Feature extractor models (..working)
+MLPExtractor (..working)  
+RecurrentExtractor (..working)  
+ConvolutionalExtractor (..working)  
+AttentionExtractor (..working)  
+GraphExtractor (..working)  
+CustomExtractor (..working)  
+
 # RL Algorithms
 ## DQN family
 DQN  
 DDQN  
-RAINBOW_DQN (...working)  
 REDQ (...working)  
 
 ## distributional DQN
@@ -21,6 +28,8 @@ QR_DQN
 QUOTA (...working)  
 IQN (...working)  
 FQF (...working)  
+MMDQN (...working)  
+C2D (...working)  
 
 ## others
 PPO (...working)  

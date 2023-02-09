@@ -17,7 +17,9 @@ from utils.prioritized_memory_numpy import PrioritizedMemory
 
 from agents.ICM_model import ICM_model
 from agents.RND_model import RND_target, RND_predict
+# need NGU
 
+from feature_extractor import *
 
 class DistCritic(Model): # Distributional Q network
     def __init__(self,

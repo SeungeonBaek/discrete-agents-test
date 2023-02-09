@@ -186,20 +186,21 @@ if __name__ == '__main__':
     1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
 
     Agent
-     1: DQN,     2: ICM_DQN,      3: RND_DQN,      4: NGU_DQN
-     5: PPO,     6: MEPPO
-     7: SAC,     8: TQC_SAC
-     9: QR_DQN, 10: ICM_QR_DQN   11: RND_QR_DQN,  12: NGU_QR_DQN
-    13: IQN,    14: QUOTA,
-    15: RAINBOW 16: ICM_RAINBOW, 17: RND_RAINBOW, 18: NGU_RAINBOW
-    19: Agent-57
-    20: REDQ,   21: ICM_REDQ,    22: RND_REDQ,    23: NGU_REDQ
+     1: DQN,      2: PPO        3: SAC
+     4: C51,      5: QR_DQN,    6: QUOTA
+     7: IQN,      8: FQF,       9: MMDQN
+     10: C2D,    11: Agent-57, 12: REDQ
+
+    Extension/Auxiliary
+    1: Vanilla,   2: ICM,            3: RND,
+    4: NGU,       5: Model Ensemble, 6: TQC
     """
 
     env_switch = 4
     agent_switch = 9
+    ext_switch = 1
 
-    env_config, agent_config = env_agent_config(env_switch, agent_switch)
+    env_config, agent_config = env_agent_config(env_switch, agent_switch, ext_switch)
 
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
     rl_custom_config = {'use_prev_obs': True, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}
