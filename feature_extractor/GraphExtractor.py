@@ -96,6 +96,17 @@ class GATExtractor(Model):
         return feature
 
 
+def load_GraphExtractor(extractor_config:Dict, feature_dim):
+    if extractor_config.get('name', None) == 'GCN':
+        return GCNExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'GAT':
+        return GATExtractor(extractor_config, feature_dim)
+
+    else:
+        raise ValueError("please use the MLPExtractor in ['GCN', 'GAT']")
+
+
 if __name__ == "__main__":
     # Devlopment required
     pass

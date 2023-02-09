@@ -134,5 +134,40 @@ class TransformerExtractor(Model):
         return feature
 
 
+def load_CustomExtractor(extractor_config:Dict, feature_dim):
+    if extractor_config.get('name', None) == 'ExamRes':
+        return ResidualExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamAE':
+        return AutoEncoderExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamUNet':
+        return UNetExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamLSTM':
+        return LSTMExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamCNN1D':
+        return CNN1DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamBiLSTM':
+        return BiLSTMExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamAttention':
+        return AttentionExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamTransductiveGNN':
+        return TransDuctiveGNNExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamInductiveGNN':
+        return InductiveGNNExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'ExamTransformer':
+        return TransformerExtractor(extractor_config, feature_dim)
+
+    else:
+        raise ValueError("please use the correct example extractor or modify the load func")
+
+
 if __name__ == "__main__":
     pass

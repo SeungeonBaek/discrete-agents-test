@@ -10,17 +10,23 @@ from CustomExtractor import *
 
 def define_extractor(extractor_config: Dict):
     if extractor_config.get("type", None) == "MLP":
-        pass
+        load_MLPExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+
     elif extractor_config.get("type", None) == "Convolutional":
-        pass
+        load_ConvExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+
     elif extractor_config.get("type", None) == "Recurrent":
-        pass
+        load_RecurExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+
     elif extractor_config.get("type", None) == "Attention":
-        pass
+        load_AttentionExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+
     elif extractor_config.get("type", None) == "Graph":
-        pass
+        load_GraphExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+
     elif extractor_config.get("type", None) == "Custom":
-        pass
+        load_CustomExtractor(extractor_config, extractor_config.get("feature_dim", 128))
+        
     else:
         raise ValueError("please use correct extractor type in ['MLP', 'Convolutional', 'Recurrent', 'Attention', 'Graph', 'Custom']")
 

@@ -178,6 +178,23 @@ class GRUExtractor(Model):
         return feature
 
 
+def load_RecurExtractor(extractor_config:Dict, feature_dim):
+    if extractor_config.get('name', None) == 'LSTM':
+        return LSTMExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'LSTMCell':
+        return LSTMCellExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'GRU':
+        return GRUExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'GRUCell':
+        return GRUCellExtractor(extractor_config, feature_dim)
+
+    else:
+        raise ValueError("please use the MLPExtractor in ['LSTM', 'LSTMCell', 'GRU', 'GRUCell]")
+
+
 if __name__ == "__main__":
     # Development required
     pass

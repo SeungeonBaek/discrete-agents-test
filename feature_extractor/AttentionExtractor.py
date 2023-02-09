@@ -139,6 +139,20 @@ class TransformerExtractor(Model):
         return feature
 
 
+def load_AttentionExtractor(extractor_config:Dict, feature_dim):
+    if extractor_config.get('name', None) == 'Attention':
+        return AttentionExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'MultiHeadAttention':
+        return MultiHeadAttentionExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'Transformer':
+        return TransformerExtractor(extractor_config, feature_dim)
+
+    else:
+        raise ValueError("please use the MLPExtractor in ['Attention', 'MultiHeadAttention', 'Transformer']")
+
+
 if __name__ == "__main__":
     # Development required
     pass

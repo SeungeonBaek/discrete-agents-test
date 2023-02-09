@@ -264,6 +264,29 @@ class UNet2DExtractor(Model):
         return feature
 
 
+def load_ConvExtractor(extractor_config:Dict, feature_dim):
+    if extractor_config.get('name', None) == 'CNN1D':
+        return CNN1DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'CNN2D':
+        return CNN2DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'AutoEncoder1D':
+        return AutoEncoder1DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'AutoEncoder2D':
+        return AutoEncoder2DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'UNet1D':
+        return UNet1DExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'UNet2D':
+        return UNet2DExtractor(extractor_config, feature_dim)
+
+    else:
+        raise ValueError("please use the MLPExtractor in ['CNN1D', 'CNN2D', 'AutoEncoder1D', 'AutoEncoder2D']")
+
+
 if __name__ == "__main__":
     # Devlopment required
     pass
