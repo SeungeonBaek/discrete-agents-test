@@ -74,26 +74,23 @@ class RLLoader():
             from agents.DQN import Agent
 
         elif self.agent_config['agent_name'] == 'PPO':
-            if self.agent_config['extension']['name'] == 'Model_Ensemble':
-                from agents.MEPPO import Agent
-            else:
-                from agents.PPO import Agent
+            from agents.PPO import Agent
 
         elif self.agent_config['agent_name'] == 'SAC':
-            if self.agent_config['extension']['name'] == 'TQC':
-                from agents.TQC_SAC import Agent
-            else:
-                from agents.SAC import Agent
+            from agents.SAC import Agent
 
         elif self.agent_config['agent_name'] == 'QR_DQN':
             from agents.QR_DQN import Agent
-        elif self.agent_config['agent_name'] == 'IQN':
-            from agents.IQN import Agent
         elif self.agent_config['agent_name'] == 'QUOTA':
             from agents.QUOTA import Agent
-
-        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
-            from agents.RAINBOW_DQN import Agent
+        elif self.agent_config['agent_name'] == 'IQN':
+            from agents.IQN import Agent
+        elif self.agent_config['agent_name'] == 'FQF':
+            from agents.FQF import Agent
+        elif self.agent_config['agent_name'] == 'MMDQN':
+            from agents.FQF import Agent
+        elif self.agent_config['agent_name'] == 'C2D':
+            from agents.FQF import Agent
 
         elif self.agent_config['agent_name'] == 'Agent57':
             from agents.Agent_57 import Agent

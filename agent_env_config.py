@@ -32,43 +32,87 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
 
     ## PPO
     elif agent_switch == 2:
-        if ext_switch == 1:
-            from agent_config import PPO_Vanilla_ageng_config
-            agent_config = PPO_Vanilla_ageng_config
-        elif ext_switch == 2:
-            from agent_config import PPO_ICM_ageng_config
-            agent_config = PPO_ICM_ageng_config
-        elif ext_switch == 3:
-            from agent_config import PPO_RND_ageng_config
-            agent_config = PPO_RND_ageng_config
-        elif ext_switch == 4:
-            from agent_config import PPO_NGU_ageng_config
-            agent_config = PPO_NGU_ageng_config
-        elif ext_switch == 5:
-            from agent_config import MEPPO_agent_config
-            agent_config = MEPPO_agent_config
+        if isinstance(ext_switch, list) == True:
+            if (1 in ext_switch) and (5 in ext_switch):
+                from agent_config import PPO_Vanilla_ageng_config
+                agent_config = PPO_Vanilla_ageng_config
+            elif (2 in ext_switch) and (5 in ext_switch):
+                from agent_config import PPO_ICM_ageng_config
+                agent_config = PPO_ICM_ageng_config
+            elif (3 in ext_switch) and (5 in ext_switch):
+                from agent_config import PPO_RND_ageng_config
+                agent_config = PPO_RND_ageng_config
+            elif (4 in ext_switch) and (5 in ext_switch):
+                from agent_config import PPO_NGU_ageng_config
+                agent_config = PPO_NGU_ageng_config
+            else:
+                raise ValueError("Please correct aux switch in [(1,5), (2,5), (3,5), (4,5)] for SAC")
+
+            agent_config['extension']['name'] += '_ModelEnsemble'
+            agent_config['extension']['use_ModelEnsemble'] = True
+
         else:
-            raise ValueError("Please correct aux switch in [1, 2, 3, 4, 5] for PPO")
+            if ext_switch == 1:
+                from agent_config import PPO_Vanilla_ageng_config
+                agent_config = PPO_Vanilla_ageng_config
+            elif ext_switch == 2:
+                from agent_config import PPO_ICM_ageng_config
+                agent_config = PPO_ICM_ageng_config
+            elif ext_switch == 3:
+                from agent_config import PPO_RND_ageng_config
+                agent_config = PPO_RND_ageng_config
+            elif ext_switch == 4:
+                from agent_config import PPO_NGU_ageng_config
+                agent_config = PPO_NGU_ageng_config
+            elif ext_switch == 5:
+                from agent_config import PPO_Vanilla_ageng_config
+                agent_config = PPO_Vanilla_ageng_config
+                agent_config['extension']['name'] = 'ModelEnsemble'
+                agent_config['extension']['use_ModelEnsemble'] = True
+            else:
+                raise ValueError("Please correct aux switch in [1, 2, 3, 4, 5] for PPO")
 
     ## SAC
     elif agent_switch == 3:
-        if ext_switch == 1:
-            from agent_config import SAC_Vanilla_agent_config
-            agent_config = SAC_Vanilla_agent_config
-        elif ext_switch == 2:
-            from agent_config import SAC_ICM_agent_config
-            agent_config = SAC_ICM_agent_config
-        elif ext_switch == 3:
-            from agent_config import SAC_RND_agent_config
-            agent_config = SAC_RND_agent_config
-        elif ext_switch == 4:
-            from agent_config import SAC_NGU_agent_config
-            agent_config = SAC_NGU_agent_config
-        elif ext_switch == 6:
-            from agent_config import SAC_TQC_agent_config
-            agent_config = SAC_TQC_agent_config
+        if isinstance(ext_switch, list) == True:
+            if (1 in ext_switch) and (6 in ext_switch):
+                from agent_config import SAC_Vanilla_agent_config
+                agent_config = SAC_Vanilla_agent_config
+            elif (2 in ext_switch) and (6 in ext_switch):
+                from agent_config import SAC_ICM_agent_config
+                agent_config = SAC_ICM_agent_config
+            elif (3 in ext_switch) and (6 in ext_switch):
+                from agent_config import SAC_RND_agent_config
+                agent_config = SAC_RND_agent_config
+            elif (4 in ext_switch) and (6 in ext_switch):
+                from agent_config import SAC_NGU_agent_config
+                agent_config = SAC_NGU_agent_config
+            else:
+                raise ValueError("Please correct aux switch in [(1,6), (2,6), (3,6), (4,6)] for SAC")
+
+            agent_config['extension']['name'] += '_TQC'
+            agent_config['extension']['use_TQC'] = True
+
         else:
-            raise ValueError("Please correct aux switch in [1, 2, 3, 4, 6] for SAC")
+            if ext_switch == 1:
+                from agent_config import SAC_Vanilla_agent_config
+                agent_config = SAC_Vanilla_agent_config
+            elif ext_switch == 2:
+                from agent_config import SAC_ICM_agent_config
+                agent_config = SAC_ICM_agent_config
+            elif ext_switch == 3:
+                from agent_config import SAC_RND_agent_config
+                agent_config = SAC_RND_agent_config
+            elif ext_switch == 4:
+                from agent_config import SAC_NGU_agent_config
+                agent_config = SAC_NGU_agent_config
+            elif ext_switch == 6:
+                from agent_config import SAC_Vanilla_agent_config
+                agent_config = SAC_Vanilla_agent_config
+                agent_config['extension']['name'] = 'TQC'
+                agent_config['extension']['use_TQC'] = True
+            else:
+                raise ValueError("Please correct aux switch in [1, 2, 3, 4, 6] for SAC")
 
     ## C51
     elif agent_switch == 4:
@@ -141,8 +185,19 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
     ## FQF
     elif agent_switch == 8:
         if ext_switch == 1:
-            from agent_config import RAINBOW_DQN_Vanilla_agent_config
-            agent_config = RAINBOW_DQN_Vanilla_agent_config
+            from agent_config import FQF_Vanilla_agent_config
+            agent_config = FQF_Vanilla_agent_config
+        elif ext_switch == 2:
+            from agent_config import FQF_Vanilla_agent_config
+            agent_config = FQF_Vanilla_agent_config
+        elif ext_switch == 3:
+            from agent_config import FQF_Vanilla_agent_config
+            agent_config = FQF_Vanilla_agent_config
+        elif ext_switch == 4:
+            from agent_config import FQF_Vanilla_agent_config
+            agent_config = FQF_Vanilla_agent_config
+        else:
+            raise ValueError("Please correct aux switch in [1, 2, 3, 4] for FQF")
 
     # MMDQN
     elif agent_switch == 9:
@@ -160,6 +215,7 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
             agent_config = MMDQN_NGU_agent_config
         else:
             raise ValueError("Please correct aux switch in [1, 2, 3, 4] for MMDQN")
+
     ## C2D
     elif agent_switch == 10:
         if ext_switch == 1:
@@ -177,13 +233,13 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
         else:
             raise ValueError("Please correct aux switch in [1, 2, 3, 4] for C2D")
 
-    ## Agent-57
+    ## Agent57
     elif agent_switch == 11:
         if ext_switch == 1:
-            from agent_config import Agent57_agent_config
-            agent_config = Agent57_agent_config
+            from agent_config import Agent57_Vanilla_agent_config
+            agent_config = Agent57_Vanilla_agent_config
         else:
-            raise ValueError("Please correct aux switch in [1] for Agent-57")
+            raise ValueError("Agent57 should use switch 1")
 
     ## REDQ
     elif agent_switch == 12:

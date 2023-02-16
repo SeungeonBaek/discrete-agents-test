@@ -102,6 +102,7 @@ def main(env_config: Dict,
             # obs parsing per env
             if env_name == 'LunarLander-v2' or env_name == 'highway-v0':
                 obs, reward, done, _ = env.step(action)
+                origin_obs = np.array([])
 
             elif env_name == 'custom_highway-v0':
                 obs, reward, done, _ = env.step(action)
@@ -196,7 +197,7 @@ if __name__ == '__main__':
     4: NGU,       5: Model Ensemble, 6: TQC
     """
 
-    env_switch = 4
+    env_switch = 1
     agent_switch = 9
     ext_switch = 1
 

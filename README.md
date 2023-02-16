@@ -21,9 +21,11 @@ CustomExtractor (..working)
 ## DQN family
 DQN  
 DDQN  
+Agent57 (...working)  
 REDQ (...working)  
 
 ## distributional DQN
+C51 (...working)  
 QR_DQN  
 QUOTA (...working)  
 IQN (...working)  
