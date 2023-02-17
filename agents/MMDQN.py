@@ -1,4 +1,4 @@
-from typing import Dict, Union, Any
+from typing import Dict, Union, Any, Tuple
 from numpy.typing import NDArray
 
 import tensorflow as tf
@@ -17,12 +17,21 @@ from utils.prioritized_memory_numpy import PrioritizedMemory
 
 from agents.ICM_model import ICM_model
 from agents.RND_model import RND_target, RND_predict
+# need NGU
 
+from feature_extractor import *
 
-class Critic(Model): # Q network
+class DistCritic(Model): # Distributional Q network
     def __init__(self,
-                 act_space: int)-> None:
-        super(Critic,self).__init__()
+                 quantile_num: int,
+                 obs_space: int,
+                 action_space: int)-> None:
+        super(DistCritic,self).__init__()
+        self.quantile_num = quantile_num
+
+        self.obs_space = obs_space
+        self.action_space = action_space
+
         self.initializer = initializers.glorot_normal()
         self.regularizer = regularizers.l2(l=0.0005)
         
@@ -30,22 +39,24 @@ class Critic(Model): # Q network
         self.l1_ln = LayerNormalization(axis=-1)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2_ln = LayerNormalization(axis=-1)
-        self.value = Dense(act_space, activation = None)
+        self.value_dist = Dense(self.action_space * self.quantile_num, activation = None)
 
-    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        l1 = self.l1(state)
+    def call(self, state: Union[NDArray, tf.Tensor])-> Tuple[tf.Tensor, tf.Tensor]:
+        l1 = self.l1(state) # Todo: check!
         l1_ln = self.l1_ln(l1)
         l2 = self.l2(l1_ln)
         l2_ln = self.l2_ln(l2)
-        value = self.value(l2_ln)
+        value_dist = self.value_dist(l2_ln)
+        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num))
+        values = tf.reduce_mean(value_dist, axis=2)
 
-        return value
+        return value_dist, values
 
 
 class Agent:
     """
     Argument:
-        agent_config: agent configuration which is realted with RL algorithm => DQN
+        agent_config: agent configuration which is realted with RL algorithm => QR-DQN
             agent_config:
                 {
                     name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
@@ -63,6 +74,10 @@ class Agent:
         obs_space: shape of observation
         act_space: shape of action
         gamma: discount rate
+        tau: polyak update parameter
+
+        quantile_num: number of quantiles for distributional critic
+        tau_hat: quantile values
 
         epsilon: exploration related hyperparam
         epsilon_decaying_rate: decaying rate of epsilon
@@ -76,10 +91,10 @@ class Agent:
         batch_size: mini-batch size
         warm_up: number of warm_up step that uses pure action
 
-        critic_lr_main: learning rate of main critic network
-        critic_main: main critic network
-        critic_target: target critic network
-        critic_opt_main: optimizer of main critic network
+        critic_lr_main: learning rate of main distributional critic network
+        critic_main: main distributional critic network
+        critic_target: target distributional critic network
+        critic_opt_main: optimizer of main distributional critic network
 
         # extension properties
         extension_config: configuration of extention algorithm
@@ -108,11 +123,11 @@ class Agent:
         action: return the action which is mapped with obs in policy
         get_intrinsic_reward: return the intrinsic reward
         update_target: update target critic network at user-specified frequency
-        update: update main critic network
+        update: update main distributional critic network
         save_xp: save transition(s, a, r, s', d) in experience memory
         load_models: load weights
         save_models: save weights
-    []
+
     """
     def __init__(self,
                  agent_config: Dict,
@@ -127,6 +142,8 @@ class Agent:
 
         self.gamma = self.agent_config['gamma']
         self.tau = self.agent_config['tau']
+
+        self.quantile_num = self.agent_config['quantile_num']
 
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
@@ -147,8 +164,8 @@ class Agent:
         # network config
         self.critic_lr_main = self.agent_config['lr_critic']
 
-        self.critic_main = Critic(self.act_space)
-        self.critic_target = Critic(self.act_space)
+        self.critic_main = DistCritic(self.quantile_num, self.obs_space, self.act_space)
+        self.critic_target = DistCritic(self.quantile_num, self.obs_space, self.act_space)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)
@@ -176,15 +193,15 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray, is_test: bool)-> NDArray:
+    def action(self, obs: NDArray, is_test: bool)-> NDArray: # Todo: check!
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
-        values = self.critic_main(obs)
-        # print(f'in action, values: {np.shape(np.array(values))}')
+        value_dist, values = self.critic_main(obs)
+        # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
         if is_test == True:
             action = np.argmax(values.numpy())
-            
+
         else:
             random_val = np.random.rand()
             if self.update_step > self.warm_up:
@@ -196,10 +213,8 @@ class Agent:
                 self.epsilon *= self.epsilon_decaying_rate
                 if self.epsilon < self.min_epsilon:
                     self.epsilon = self.min_epsilon
-
             else:
                 action = np.random.randint(self.act_space)
-            # print(f'in action, action: {np.shape(np.array(action))}')
 
         return action, values.numpy()
 
@@ -284,54 +299,71 @@ class Agent:
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
 
+        # print(f'in update, states: {states.shape}')
+        # print(f'in update, next_states: {next_states.shape}')
+        # print(f'in update, actions: {actions.shape}')
+        # print(f'in update, rewards: {rewards.shape}')
+
         critic_variable = self.critic_main.trainable_variables
-        with tf.GradientTape() as tape_critic:
+        with tf.GradientTape() as tape_critic:  # Todo backpropagation related code
             tape_critic.watch(critic_variable)
-
-            current_q_next = self.critic_main(next_states)
-            # print(f'in update, current_q_next: {current_q_next.shape}')
-            next_action = tf.argmax(current_q_next, axis=1)
-            # print(f'in update, next_action: {next_action.shape}')
-            indices = tf.stack([range(self.batch_size), next_action], axis=1)
-            # print(f'in update, indices: {indices.shape}')
-
-            target_q_next = tf.cond(tf.convert_to_tensor(self.extension_config['use_DDQN'], dtype=tf.bool),\
-                    lambda: tf.gather_nd(params=self.critic_target(next_states), indices=indices), \
-                    lambda: tf.reduce_max(self.critic_target(next_states), axis=1))
-            # print(f'in update, target_q_next: {target_q_next.shape}')
-
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            target_q = tf.stop_gradient(target_q)
-            # print(f'in update, target_q_next: {target_q.shape}')
-
-            current_q = self.critic_main(states)
-            # print(f'in update, current_q: {current_q.shape}')
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            # print(f'in update, action_one_hot: {action_one_hot.shape}')
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
-            # print(f'in update, current_q: {current_q.shape}')
-
-            td_error = tf.subtract(current_q, target_q)
-            # print(f'in update, td_error: {td_error.shape}')
-
-            critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
-                                    lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
-                                    lambda: tf.math.square(td_error)))
-            # print(f'in update, critic_losses : {critic_losses.shape}')
             
-            critic_loss = tf.math.reduce_mean(critic_losses)
+            # target
+            target_q_dists = self.critic_target(next_states)
+            target_indices = tf.stack([range(self.batch_size), tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
+            target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
+            # print(f'in update, target_q_dists: {target_q_dists.shape}')
+            # print(f'in update, target_indices: {target_indices.shape}')
+            # print(f'in update, target_q_dist_next: {target_q_dist_next.shape}')
+
+            target_q_dist = tf.expand_dims(rewards, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(dones, dtype=tf.float32)), axis=1)
+            target_q_dist = tf.stop_gradient(target_q_dist)
+            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
+            # print(f'in update, target_q_dist: {target_q_dist.shape}')
+            # print(f'in update, target_q_dist_tile: {target_q_dist_tile.shape}')
+
+            # current
+            current_q_dists = self.critic_main(states)
+            current_indices = tf.stop_gradient(tf.stack([range(self.batch_size), tf.cast(actions, tf.int32)], axis=1))
+            current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
+            # print(f'in update, current_q_dists: {current_q_dists.shape}')
+            # print(f'in update, current_indices: {current_indices.shape}')
+            # print(f'in update, current_q_dist: {current_q_dist.shape}')
+
+            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
+            # print(f'in update, current_q_dist_tile: {current_q_dist_tile.shape}')
+
+            # loss
+            td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
+            huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
+            # print(f'in update, td_error: {td_error.shape}')
+            # print(f'in update, huber_loss: {huber_loss.shape}')
+            
+            tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
+            inv_tau = 1.0 - tau
+            # print(f'in update, tau: {tau.shape}')
+            # print(f'in update, inv_tau: {inv_tau.shape}')
+
+            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
+            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
+            # print(f'in update, tau_tile: {tau_tile.shape}')
+            # print(f'in update, inv_tau_tile: {inv_tau_tile.shape}')
+
+            critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau_tile, huber_loss), tf.multiply(tau_tile, huber_loss))
+            critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
+            # print(f'in update, critic_losses: {critic_losses.shape}')
             # print(f'in update, critic_loss: {critic_loss.shape}')
+
+        # value check
+        # print(f'in update, target_q_dists: {target_q_dists}')
+        # ... omitted
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
 
         self.critic_opt_main.apply_gradients(zip(grads_critic, critic_variable))
 
-        target_q_val = target_q.numpy()
-        current_q_val = current_q.numpy()
+        target_q_val = tf.reduce_mean(tf.reduce_mean(target_q_dist, axis=1), axis=0).numpy()
+        current_q_val = tf.reduce_mean(tf.reduce_mean(current_q_dist, axis=1), axis=0).numpy()
         critic_loss_val = critic_loss.numpy()
 
         if self.update_step % self.target_update_freq == 0:
@@ -376,69 +408,63 @@ class Agent:
 
                 rnd_pred_loss_val = rnd_pred_loss.numpy()
 
-
         elif self.extension_name == 'NGU':
             pass
 
         # PER update
-        td_error_numpy = np.abs(td_error.numpy())
+        td_error_numpy = tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1)
         if self.agent_config['use_PER']:
             for i in range(self.batch_size):
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])
 
+        # return for logging
         if self.extension_name == 'ICM':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
         elif self.extension_name == 'RND':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon, rnd_pred_loss_val
         elif self.extension_name == 'NGU':
             pass
         else:
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
+            return updated, critic_loss_val, target_q_val, current_q_val, self.epsilon
 
     def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.
         if self.agent_config['use_PER']:
             state_tf = tf.convert_to_tensor([state], dtype = tf.float32)
-            action_tf = tf.convert_to_tensor([action], dtype = tf.float32)
             next_state_tf = tf.convert_to_tensor([next_state], dtype = tf.float32)
-            target_action_tf = self.critic_target(next_state_tf)
-            # print(f'state_tf: {state_tf.shape}, {state_tf}')
-            # print(f'action_tf: {action_tf.shape}, {action_tf}')
-            # print(f'next_state_tf: {next_state_tf.shape}, {next_state_tf}')
-            # print(f'target_action_tf: {target_action_tf.shape}, {target_action_tf}')
-
-            current_q_next = self.critic_main(next_state_tf)
-            # print(f'current_q_next: {current_q_next.shape}, {current_q_next}')
-            next_action = tf.argmax(current_q_next, axis=1)
-            # print(f'next_action: {next_action.shape}, {next_action}')
-            indices = tf.stack([[0], next_action], axis=1)
-            # print(f'indices: {indices.shape}, {indices}')
-
-            target_q_next = self.critic_target(next_state_tf)
-            # print(f'target_q_next: {target_q_next.shape}, {target_q_next}')
-
-            target_q_next = tf.cond(tf.convert_to_tensor(self.extension_config['use_DDQN'], dtype=tf.bool),\
-                    lambda: tf.gather_nd(params=self.critic_target(next_state_tf), indices=indices), \
-                    lambda: tf.reduce_max(self.critic_target(next_state_tf), axis=1))
-            # print(f'target_q_next: {target_q_next.shape}, {target_q_next}')
-
-            target_q = reward + self.gamma * target_q_next * (1.0 - tf.cast(done, dtype=tf.float32))
-            # print(f'target_q: {target_q.shape}, {target_q}')
+            reward_tf = tf.convert_to_tensor([reward], dtype=tf.float32)
+            action_tf = tf.convert_to_tensor([action], dtype=tf.float32)
+            done_tf = tf.convert_to_tensor([done], dtype=tf.bool)
             
-            current_q = self.critic_main(state_tf)
-            # print(f'current_q: {current_q.shape}, {current_q}')
-            action_one_hot = tf.one_hot(tf.cast(action_tf, tf.int32), self.act_space)
-            # print(f'action_one_hot: {action_one_hot.shape}, {action_one_hot}')
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
-            # print(f'current_q: {current_q.shape}, {current_q}')
+            # target
+            target_q_dists = self.critic_target(next_state_tf)
+            target_indices = tf.stack([[0], tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
+            target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
+
+            target_q_dist = tf.expand_dims(reward_tf, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(done_tf, dtype=tf.float32)), axis=1)
+            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
+
+            # current
+            current_q_dists = self.critic_main(state_tf)
+            current_indices = tf.stop_gradient(tf.stack([[0], tf.cast(action_tf, tf.int32)], axis=1))
+            current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
+
+            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
+
+            # loss
+            td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
+            huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
             
-            td_error = tf.subtract(target_q ,current_q)
-            # print(f'td_error: {td_error.shape}, {td_error}')
+            tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
+            inv_tau = 1.0 - tau
 
-            td_error_numpy = np.abs(td_error)
-            # print(f'td_error_numpy: {td_error_numpy.shape}, {td_error_numpy}')
+            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
+            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
 
-            self.replay_buffer.add(td_error_numpy[0], (state, next_state, reward, action, done))
+            critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau_tile, huber_loss), tf.multiply(tau_tile, huber_loss))
+            critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
+
+            self.replay_buffer.add(critic_loss.numpy(), (state, next_state, reward, action, done))
         else:
             self.replay_buffer.add((state, next_state, reward, action, done))
 
