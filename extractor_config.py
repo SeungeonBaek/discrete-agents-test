@@ -25,15 +25,15 @@ MLP_mlp_feature_dim = 128
 
 
 # Custom Extractor configuraiton
-## For SimpleMLE extractor
-Custom_simple_mlp_extractor_config = {'name': 'SimpleMLE', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+## For SimpleMLP extractor
+Custom_simple_mlp_extractor_config = {'name': 'SimpleMLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
                                       'network_architecture': [256, 256], 'activation_function': 'relu'}
 Custom_simple_mlp_feature_dim = 128
 
-## For DivineConquer extractor
-Custom_divine_conquer_extractor_config = {'name': 'DivineConquer', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+## For SimpleInception extractor
+Custom_simple_inception_extractor_config = {'name': 'SimpleInception', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
                                           'network_architecture': [256, [128, 128], 256], 'activation_function': 'relu'}
-Custom_divine_conquer_feature_dim = 128
+Custom_simple_inception_feature_dim = 128
 
 ## For Residual extractor
 Custom_res_extractor_config = {'name': 'Residual', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,

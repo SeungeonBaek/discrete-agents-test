@@ -85,9 +85,9 @@ class SimpleMLPExtractor(Model):
         return feature
 
 
-class DivineConquerExtractor(Model):
+class SimpleInceptionExtractor(Model):
     """
-    DivineConquer extractor which could be configured by user
+    SimpleInception extractor which could be configured by user
 
     Argument:
         extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
@@ -118,7 +118,7 @@ class DivineConquerExtractor(Model):
 
     """
     def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
-        super(DivineConquerExtractor,self).__init__()
+        super(SimpleInceptionExtractor,self).__init__()
 
         self.config = extractor_config
         self.extractor_name = self.config['name']
@@ -290,11 +290,11 @@ class TransformerExtractor(Model):
 
 
 def load_CustomExtractor(extractor_config:Dict, feature_dim):
-    if extractor_config.get('name', None) == 'SimpleMLE':
+    if extractor_config.get('name', None) == 'SimpleMLP':
         return SimpleMLPExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'DivineConquer':
-        return DivineConquerExtractor(extractor_config, feature_dim)
+    elif extractor_config.get('name', None) == 'SimpleInception':
+        return SimpleInceptionExtractor(extractor_config, feature_dim)
 
     elif extractor_config.get('name', None) == 'Residual':
         return ResidualExtractor(extractor_config, feature_dim)
@@ -328,7 +328,7 @@ def load_CustomExtractor(extractor_config:Dict, feature_dim):
 
     else:
         raise ValueError("please use the correct extractor name in\
-                         ['MLE', 'DivineConquer', 'Residual', 'AE' ,'UNet', 'LSTM', 'CNN1D', 'BiLSTM', 'Attention', 'TransductiveGNN', 'InductiveGNN', 'Transformer']\
+                         ['SimpleMLP', 'SimpleInception', 'Residual', 'AE' ,'UNet', 'LSTM', 'CNN1D', 'BiLSTM', 'Attention', 'TransductiveGNN', 'InductiveGNN', 'Transformer']\
                          or modify the load function")
 
 
@@ -343,7 +343,7 @@ def test_CustomExtractor(extractor_config:Dict, feature_dim:int, test_input: NDA
 
 
 if __name__ == "__main__":
-    from extractor_config import Custom_simple_mlp_extractor_config,    Custom_simple_mlp_feature_dim,    Custom_divine_conquer_extractor_config,   Custom_divine_conquer_feature_dim
+    from extractor_config import Custom_simple_mlp_extractor_config,    Custom_simple_mlp_feature_dim,    Custom_simple_inception_extractor_config, Custom_simple_inception_feature_dim
     from extractor_config import Custom_res_extractor_config,           Custom_res_feature_dim,           Custom_ae_extractor_config,               Custom_ae_feature_dim
     from extractor_config import Custom_u_net_extractor_config,         Custom_u_net_feature_dim,         Custom_lstm_extractor_config,             Custom_lstm_feature_dim
     from extractor_config import Custom_cnn1d_extractor_config,         Custom_cnn1d_feature_dim,         Custom_bi_lstm_extractor_config,          Custom_bi_lstm_feature_dim
@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     """
     Custom Extractor
-    1: SimpleMLE Extractor, 2: DivineConquer Extractor,    3: Residual Extractor,      4: AE Extractor, 
+    1: SimpleMLP Extractor, 2: SimpleInception Extractor,  3: Residual Extractor,      4: AE Extractor, 
     5: UNet Extractor,      6: LSTM Extractor,             7: CNN1D Extractor,         8: BiLSTM Extractor,
     9: Attention Extractor, 10: TransductiveGNN Extractor, 11: InductiveGNN Extractor, 12: Transformer Extractor
     """
@@ -363,7 +363,7 @@ if __name__ == "__main__":
     if test_switch == 1:
         test_CustomExtractor(Custom_simple_mlp_extractor_config, Custom_simple_mlp_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
     elif test_switch == 2:
-        test_CustomExtractor(Custom_divine_conquer_extractor_config, Custom_divine_conquer_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
+        test_CustomExtractor(Custom_simple_inception_extractor_config, Custom_simple_inception_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
     elif test_switch == 3:
         test_CustomExtractor(Custom_res_extractor_config, Custom_res_feature_dim)
     elif test_switch == 4:
