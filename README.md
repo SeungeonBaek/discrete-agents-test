@@ -10,12 +10,12 @@ procgen
 highway-env  
 
 # Feature extractor models (..working)
-MLPExtractor (..working)  
+MLPExtractor  
 RecurrentExtractor (..working)  
 ConvolutionalExtractor (..working)  
 AttentionExtractor (..working)  
 GraphExtractor (..working)  
-CustomExtractor (..working)  
+CustomExtractor (two example finished)  
 
 # RL Algorithms
 ## DQN family

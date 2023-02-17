@@ -1,3 +1,5 @@
+import traceback
+
 from typing import List, Dict, Union, Any
 from numpy.typing import NDArray
 
@@ -11,7 +13,11 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
-# from tensorflow.keras.layers import GroupNormalization
+# from tensorflow.keras.layers import GroupNormalizationz
+
+import sys, os
+if __name__ == "__main__":
+	sys.path.append(os.getcwd())
 
 
 class FlattenExtractor(Model):
@@ -41,7 +47,7 @@ class FlattenExtractor(Model):
         super(FlattenExtractor,self).__init__()
 
         self.config = extractor_config
-        self.name = self.config['name']
+        self.extractor_name = self.config['name']
 
         # Initializer
         if self.config.get('initializer', None) == 'glorot_normal':
@@ -106,7 +112,7 @@ class MLPExtractor(Model):
         super(MLPExtractor,self).__init__()
 
         self.config = extractor_config
-        self.name = self.config['name']
+        self.extractor_name = self.config['name']
 
         # Initializer
         if self.config.get('initializer', None) == 'glorot_normal':
@@ -175,18 +181,31 @@ def load_MLPExtractor(extractor_config:Dict, feature_dim: int)-> Model:
         raise ValueError("please use the MLPExtractor in ['Flatten', 'MLP']")
 
 
+def test_MLPExtractor(extractor_config:Dict, feature_dim:int)-> None:
+    extractor = load_MLPExtractor(extractor_config, feature_dim)
+
+    try:
+        test = extractor(np.ones(shape=[128, 128]))
+    except Exception as e:
+        print(f"error: {e}")
+        print(f"error: {traceback.format_exc()}")
+
+
 if __name__ == "__main__":
-    # For Flatten extractor
-    flatten_extractor_config = {'name': 'Flatten', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005}
-    flatten_feature_dim = 128
+    from extractor_config import MLP_flatten_extractor_config, MLP_flatten_feature_dim
+    from extractor_config import MLP_mlp_extractor_config, MLP_mlp_feature_dim
 
-    flatten_extractor = load_MLPExtractor(flatten_extractor_config, flatten_feature_dim)
-    test = flatten_extractor(np.ones(shape=[128, 128]))
+    """
+    MLP Extractor
+    1: Flatten Extractor, 2: MLP Extractor
+    """
 
-    # For MLP extractor
-    mlp_extractor_config = {'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
-                            'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
-    mlp_feature_dim = 128
+    test_switch = 2
 
-    mlp_extractor = load_MLPExtractor(mlp_extractor_config, mlp_feature_dim)
-    test = mlp_extractor(np.ones(shape=[128, 128]))
+    # Test any extractor
+    if test_switch == 1:
+        test_MLPExtractor(MLP_flatten_extractor_config, MLP_flatten_feature_dim)
+    elif test_switch == 2:
+        test_MLPExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+    else:
+        raise ValueError("Please correct the test switch in [1, 2]")

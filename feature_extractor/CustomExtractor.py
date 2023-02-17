@@ -1,7 +1,10 @@
+import traceback
+
 from typing import List, Dict, Union, Any
 from numpy.typing import NDArray
 
 import tensorflow as tf
+import numpy as np
 
 from tensorflow.keras import Model
 from tensorflow.keras import initializers
@@ -10,6 +13,11 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
+# from tensorflow.keras.layers import GroupNormalization
+
+import sys, os
+if __name__ == "__main__":
+	sys.path.append(os.getcwd())
 
 
 # Example
@@ -42,7 +50,7 @@ class SimpleMLPExtractor(Model):
         super(SimpleMLPExtractor,self).__init__()
 
         self.config = extractor_config
-        self.name = self.config['name']
+        self.extractor_name = self.config['name']
 
         # Initializer
         self.initializer = initializers.glorot_normal()
@@ -113,7 +121,7 @@ class DivineConquerExtractor(Model):
         super(DivineConquerExtractor,self).__init__()
 
         self.config = extractor_config
-        self.name = self.config['name']
+        self.extractor_name = self.config['name']
 
         # Initializer
         self.initializer = initializers.glorot_normal()
@@ -122,7 +130,7 @@ class DivineConquerExtractor(Model):
         self.regularizer = regularizers.l2(l=0.0005)
 
         # Loading and defining the network architecture
-        self.net_arc = self.config.get('network_architecture', [128, [128, 128], 256])
+        self.net_arc = self.config.get('network_architecture', [256, [128, 128], 256])
         self.act_fn = self.config.get('activation_function', 'relu')
 
         self.l1 = Dense(self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
@@ -282,39 +290,99 @@ class TransformerExtractor(Model):
 
 
 def load_CustomExtractor(extractor_config:Dict, feature_dim):
-    if extractor_config.get('name', None) == 'ExamRes':
+    if extractor_config.get('name', None) == 'SimpleMLE':
+        return SimpleMLPExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'DivineConquer':
+        return DivineConquerExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'Residual':
         return ResidualExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamAE':
+    elif extractor_config.get('name', None) == 'AE':
         return AutoEncoderExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamUNet':
+    elif extractor_config.get('name', None) == 'UNet':
         return UNetExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamLSTM':
+    elif extractor_config.get('name', None) == 'LSTM':
         return LSTMExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamCNN1D':
+    elif extractor_config.get('name', None) == 'CNN1D':
         return CNN1DExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamBiLSTM':
+    elif extractor_config.get('name', None) == 'BiLSTM':
         return BiLSTMExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamAttention':
+    elif extractor_config.get('name', None) == 'Attention':
         return AttentionExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamTransductiveGNN':
+    elif extractor_config.get('name', None) == 'TransductiveGNN':
         return TransDuctiveGNNExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamInductiveGNN':
+    elif extractor_config.get('name', None) == 'InductiveGNN':
         return InductiveGNNExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'ExamTransformer':
+    elif extractor_config.get('name', None) == 'Transformer':
         return TransformerExtractor(extractor_config, feature_dim)
 
     else:
-        raise ValueError("please use the correct example extractor or modify the load func")
+        raise ValueError("please use the correct extractor name in\
+                         ['MLE', 'DivineConquer', 'Residual', 'AE' ,'UNet', 'LSTM', 'CNN1D', 'BiLSTM', 'Attention', 'TransductiveGNN', 'InductiveGNN', 'Transformer']\
+                         or modify the load function")
+
+
+def test_CustomExtractor(extractor_config:Dict, feature_dim:int, test_input: NDArray)-> None:
+    extractor = load_CustomExtractor(extractor_config, feature_dim)
+
+    try:
+        test = extractor(test_input)
+    except Exception as e:
+        print(f"error: {e}")
+        print(f"error: {traceback.format_exc()}")
 
 
 if __name__ == "__main__":
-    pass
+    from extractor_config import Custom_simple_mlp_extractor_config,    Custom_simple_mlp_feature_dim,    Custom_divine_conquer_extractor_config,   Custom_divine_conquer_feature_dim
+    from extractor_config import Custom_res_extractor_config,           Custom_res_feature_dim,           Custom_ae_extractor_config,               Custom_ae_feature_dim
+    from extractor_config import Custom_u_net_extractor_config,         Custom_u_net_feature_dim,         Custom_lstm_extractor_config,             Custom_lstm_feature_dim
+    from extractor_config import Custom_cnn1d_extractor_config,         Custom_cnn1d_feature_dim,         Custom_bi_lstm_extractor_config,          Custom_bi_lstm_feature_dim
+    from extractor_config import Custom_attention_extractor_config,     Custom_attention_feature_dim,     Custom_transductive_gnn_extractor_config, Custom_transductive_gnn_feature_dim
+    from extractor_config import Custom_inductive_gnn_extractor_config, Custom_inductive_gnn_feature_dim, Custom_transformer_extractor_config,      Custom_transformer_feature_dim
+
+    """
+    Custom Extractor
+    1: SimpleMLE Extractor, 2: DivineConquer Extractor,    3: Residual Extractor,      4: AE Extractor, 
+    5: UNet Extractor,      6: LSTM Extractor,             7: CNN1D Extractor,         8: BiLSTM Extractor,
+    9: Attention Extractor, 10: TransductiveGNN Extractor, 11: InductiveGNN Extractor, 12: Transformer Extractor
+    """
+
+    test_switch = 1
+
+    # Test any extractor
+    if test_switch == 1:
+        test_CustomExtractor(Custom_simple_mlp_extractor_config, Custom_simple_mlp_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
+    elif test_switch == 2:
+        test_CustomExtractor(Custom_divine_conquer_extractor_config, Custom_divine_conquer_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
+    elif test_switch == 3:
+        test_CustomExtractor(Custom_res_extractor_config, Custom_res_feature_dim)
+    elif test_switch == 4:
+        test_CustomExtractor(Custom_ae_extractor_config, Custom_ae_feature_dim)
+    elif test_switch == 5:
+        test_CustomExtractor(Custom_u_net_extractor_config, Custom_u_net_feature_dim)
+    elif test_switch == 6:
+        test_CustomExtractor(Custom_lstm_extractor_config, Custom_lstm_feature_dim)
+    elif test_switch == 7:
+        test_CustomExtractor(Custom_cnn1d_extractor_config, Custom_cnn1d_feature_dim)
+    elif test_switch == 8:
+        test_CustomExtractor(Custom_bi_lstm_extractor_config, Custom_bi_lstm_feature_dim)
+    elif test_switch == 9:
+        test_CustomExtractor(Custom_attention_extractor_config, Custom_attention_feature_dim)
+    elif test_switch == 10:
+        test_CustomExtractor(Custom_transductive_gnn_extractor_config, Custom_transductive_gnn_feature_dim)
+    elif test_switch == 11:
+        test_CustomExtractor(Custom_inductive_gnn_extractor_config, Custom_inductive_gnn_feature_dim)
+    elif test_switch == 12:
+        test_CustomExtractor(Custom_transformer_extractor_config, Custom_transformer_feature_dim)
+    else:
+        raise ValueError("Please correct the test switch in [1~12]")
