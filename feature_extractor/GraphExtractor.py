@@ -125,20 +125,20 @@ def test_GraphExtractor(extractor_config:Dict, feature_dim:int)-> None: # Todo
 
 
 if __name__ == "__main__": # Todo
-    from extractor_config import MLP_flatten_extractor_config, MLP_flatten_feature_dim
-    from extractor_config import MLP_mlp_extractor_config, MLP_mlp_feature_dim
+    from extractor_config import Graph_GCN_extractor_config, Graph_GCN_feature_dim
+    from extractor_config import Graph_GAT_extractor_config, Graph_GAT_feature_dim
 
     """
-    MLP Extractor
-    1: Flatten Extractor, 2: MLP Extractor
+    Graph Extractor
+    1: GCN Extractor, 2: GAT Extractor
     """
 
     test_switch = 2
 
     # Test any extractor
     if test_switch == 1:
-        test_GraphExtractor(MLP_flatten_extractor_config, MLP_flatten_feature_dim)
+        test_GraphExtractor(Graph_GCN_extractor_config, Graph_GCN_feature_dim)
     elif test_switch == 2:
-        test_GraphExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+        test_GraphExtractor(Graph_GAT_extractor_config, Graph_GAT_feature_dim)
     else:
         raise ValueError("Please correct the test switch in [1, 2]")

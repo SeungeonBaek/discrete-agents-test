@@ -170,13 +170,15 @@ def test_AttentionExtractor(extractor_config:Dict, feature_dim:int)-> None: # To
         print(f"error: {traceback.format_exc()}")
 
 
-if __name__ == "__main__": # Todo
-    from extractor_config import MLP_flatten_extractor_config, MLP_flatten_feature_dim
-    from extractor_config import MLP_mlp_extractor_config, MLP_mlp_feature_dim
+if __name__ == "__main__":
+    from extractor_config import Attention_attention_extractor_config, Attention_attention_feature_dim
+    from extractor_config import Attention_multi_head_attention_extractor_config, Attention_multi_head_attention_feature_dim
+    from extractor_config import Attention_transformer_extractor_config, Attention_transformer_feature_dim
 
     """
-    MLP Extractor
-    1: Flatten Extractor, 2: MLP Extractor
+    Attention Extractor
+    1: Attention Extractor, 2: MultiHeadAttention Extractor
+    3: Transformer Extractor
     """
 
     test_switch = 2
@@ -186,5 +188,7 @@ if __name__ == "__main__": # Todo
         test_AttentionExtractor(MLP_flatten_extractor_config, MLP_flatten_feature_dim)
     elif test_switch == 2:
         test_AttentionExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+    elif test_switch == 3:
+        test_AttentionExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
     else:
-        raise ValueError("Please correct the test switch in [1, 2]")
+        raise ValueError("Please correct the test switch in [1, 2, 3]")

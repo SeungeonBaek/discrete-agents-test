@@ -41,31 +41,78 @@ REC_gru_cell_feature_dim = 128
 ############ Convolutional Extractor configuraiton ############
 ###############################################################
 
-## For SimpleMLP extractor
-MLP_mlp_extractor_config = {'type': 'Convolutional', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+## For CNN1D extractor
+Convolutional_CNN1d_extractor_config = {'type': 'Convolutional', 'name': 'CNN1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
-MLP_mlp_feature_dim = 128
+Convolutional_CNN1d_feature_dim = 128
 
+## For CNN2D extractor
+Convolutional_CNN2d_extractor_config = {'type': 'Convolutional', 'name': 'CNN2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_CNN2d_feature_dim = 128
+
+## For AutoEncoder1D extractor
+Convolutional_AE1d_extractor_config = {'type': 'Convolutional', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_AE1d_feature_dim = 128
+
+## For AutoEncoder2D extractor
+Convolutional_AE2d_extractor_config = {'type': 'Convolutional', 'name': 'AutoEncoder2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_AE2d_feature_dim = 128
+
+## For Inception1D extractor
+Convolutional_Inception1d_extractor_config = {'type': 'Convolutional', 'name': 'Inception1d', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_Inception1d_feature_dim = 128
+
+## For Inception2d extractor
+Convolutional_Inception2d_extractor_config = {'type': 'Convolutional', 'name': 'Inception2d', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_Inception2d_feature_dim = 128
+
+## For UNet1D extractor
+Convolutional_UNet1d_extractor_config = {'type': 'Convolutional', 'name': 'UNet1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_UNet1d_feature_dim = 128
+
+## For UNet2D extractor
+Convolutional_UNet2d_extractor_config = {'type': 'Convolutional', 'name': 'UNet2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_UNet2d_feature_dim = 128
 
 ###########################################################
 ############ Attention Extractor configuraiton ############
 ###########################################################
 
-## For SimpleMLP extractor
-MLP_mlp_extractor_config = {'type': 'Attention', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+## For Attention extractor
+Attention_attention_extractor_config = {'type': 'Attention', 'name': 'Attention', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
-MLP_mlp_feature_dim = 128
+Attention_attention_feature_dim = 128
 
+## For MultiHeadAttention extractor
+Attention_multi_head_attention_extractor_config = {'type': 'Attention', 'name': 'MultiHeadAttention', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Attention_multi_head_attention_feature_dim = 128
+
+## For Transformer extractor
+Attention_transformer_extractor_config = {'type': 'Attention', 'name': 'Transformer', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Attention_transformer_feature_dim = 128
 
 #######################################################
 ############ Graph Extractor configuraiton ############
 #######################################################
 
-## For SimpleMLP extractor
-MLP_mlp_extractor_config = {'type': 'Graph', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+## For GCN extractor
+Graph_GCN_extractor_config = {'type': 'Graph', 'name': 'GCN', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
-MLP_mlp_feature_dim = 128
+Graph_GCN_feature_dim = 128
 
+## For GAT extractor
+Graph_GAT_extractor_config = {'type': 'Graph', 'name': 'GAT', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Graph_GAT_feature_dim = 128
 
 ########################################################
 ############ Custom Extractor configuraiton ############
@@ -78,7 +125,7 @@ Custom_simple_mlp_feature_dim = 128
 
 ## For SimpleInception extractor
 Custom_simple_inception_extractor_config = {'type': 'Custom', 'name': 'SimpleInception', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
-                                          'network_architecture': [256, [128, 128], 256], 'activation_function': 'relu'}
+                                          'network_architecture': [256, [128, 64], 256], 'activation_function': 'relu'}
 Custom_simple_inception_feature_dim = 128
 
 ## For Residual extractor
