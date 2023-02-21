@@ -45,6 +45,80 @@ class Critic(Model): # Q network
         return value
 
 
+class ConfigurableCritic(Model): # Q network
+    def __init__(self,
+                 act_space: int,
+                 critic_config: Dict)-> None:
+        super(ConfigurableCritic,self).__init__()
+        self.critic_config = critic_config
+        self.critic_name = critic_config['name']
+
+        self.network_config = critic_config['network_config']
+        self.extractor_config = self.network_config['feature_extractor_config']
+        self.fcn_config = self.network_config['fcn_config']
+
+        self.feature_extractor = define_extractor(extractor_config=self.extractor_config)
+
+        # Initializer
+        if self.fcn_config.get('initializer', None) == 'glorot_normal':
+            self.initializer = initializers.glorot_normal()
+        elif self.fcn_config.get('initializer', None) == 'he_normal':
+            self.initializer = initializers.he_normal()
+        elif self.fcn_config.get('initializer', None) == 'orthogonal':
+            self.initializer = initializers.orthogonal()
+        else:
+            self.initializer = initializers.random_normal()        
+        
+        # Regularizer
+        if self.fcn_config.get('regularizer', None) == 'l1':
+            self.regularizer = regularizers.l1(l=self.fcn_config['l1']) # 0.0005
+        elif self.fcn_config.get('regularizer', None) == 'l2':
+            self.regularizer = regularizers.l2(l=self.fcn_config['l2']) # 0.0005
+        elif self.fcn_config.get('regularizer', None) == 'l1_l2':
+            self.regularizer = regularizers.l1_l2(l1=self.fcn_config['l1'], l2=self.fcn_config['l2']) # 0.0005, 0.0005
+        else:
+            self.regularizer = None
+
+        # Loading the network architecture
+        self.net_arc = self.fcn_config.get('network_architecture', [])
+        if self.fcn_config.get('use_norm', False) == True:
+            self.fcn_list = [None for _ in self.net_arc*2]
+        else:
+            self.fcn_list = [None for _ in self.net_arc]
+
+        # Define the network architecture
+        if self.fcn_config.get('use_norm', False) == True:
+            for idx in range(0, len(self.net_arc*2), 2):
+                self.fcn_list[idx] = Dense(self.net_arc[int(idx/2)], activation = self.fcn_config.get('act_fn', 'relu'), kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
+                if self.fcn_config.get('norm_type', None) == "layer_norm":
+                    self.fcn_list[idx+1] = LayerNormalization(axis=-1)
+                elif self.fcn_config.get('norm_type', None) == "batch_norm":
+                    self.fcn_list[idx+1] = BatchNormalization(axis=-1)
+                elif self.fcn_config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', batch_norm', ']")
+        else:
+            for idx, node_num in enumerate(self.net_arc):
+                self.fcn_list[idx] = Dense(node_num, activation = self.fcn_config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
+        self.value = Dense(act_space, activation = None)
+
+    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        feature = self.feature_extractor(state)
+
+        for idx, net in enumerate(self.fcn_list):
+            if idx == 0:
+                hidden = net(feature)
+            else:
+                hidden = net(hidden)
+
+        value = self.value(hidden)
+
+        return value
+
+
 class Agent:
     """
     Argument:
@@ -150,8 +224,12 @@ class Agent:
         # network config
         self.critic_lr_main = self.agent_config['lr_critic']
 
-        self.critic_main = Critic(self.act_space)
-        self.critic_target = Critic(self.act_space)
+        if self.agent_config['is_configurable_critic']:
+            self.critic_main = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
+            self.critic_target = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
+        else:
+            self.critic_main = Critic(self.act_space)
+            self.critic_target = Critic(self.act_space)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)

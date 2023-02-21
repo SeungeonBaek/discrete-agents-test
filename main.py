@@ -181,7 +181,8 @@ def main(env_config: Dict,
 
 
 if __name__ == '__main__':
-    from agent_env_config import env_agent_config
+    from agent_env_config import env_agent_config, agent_network_config
+
     """
     Env
     1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
@@ -195,13 +196,24 @@ if __name__ == '__main__':
     Extension/Auxiliary
     1: Vanilla,   2: ICM,            3: RND,
     4: NGU,       5: Model Ensemble, 6: TQC
+
+    Extractor #TBD
+    1: None,      2: MLP,            3: Convolutional,
+    4: Recurrent, 5: Attention,      6: Graph
+    7: Custom
+
     """
 
     env_switch = 1
-    agent_switch = 9
-    ext_switch = 1
+    agent_switch = 1
+    aux_switch = 1
+    extractor_switch = 2
 
-    env_config, agent_config = env_agent_config(env_switch, agent_switch, ext_switch)
+    fcn_config={'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'network_architecture': [256],\
+                'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+
+    env_config, agent_config = env_agent_config(env_switch, agent_switch, aux_switch)
+    agent_config = agent_network_config(agent_config=agent_config, extractor_switch=extractor_switch, fcn_config=fcn_config)
 
     rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
     rl_custom_config = {'use_prev_obs': True, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}

@@ -185,10 +185,10 @@ if __name__ == "__main__":
 
     # Test any extractor
     if test_switch == 1:
-        test_AttentionExtractor(MLP_flatten_extractor_config, MLP_flatten_feature_dim)
+        test_AttentionExtractor(Attention_attention_extractor_config, Attention_attention_feature_dim)
     elif test_switch == 2:
-        test_AttentionExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+        test_AttentionExtractor(Attention_multi_head_attention_extractor_config, Attention_multi_head_attention_feature_dim)
     elif test_switch == 3:
-        test_AttentionExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+        test_AttentionExtractor(Attention_transformer_extractor_config, Attention_transformer_feature_dim)
     else:
         raise ValueError("Please correct the test switch in [1, 2, 3]")

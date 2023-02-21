@@ -4,7 +4,7 @@
 
 ## For Flatten extractor
 MLP_flatten_extractor_config = {'type': 'MLP', 'name': 'Flatten', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005}
-MLP_flatten_feature_dim = 128
+MLP_flatten_feature_dim = 256
 
 ## For MLP extractor
 MLP_mlp_extractor_config = {'type': 'MLP', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
