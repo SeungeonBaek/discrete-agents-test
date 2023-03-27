@@ -12,6 +12,8 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM, LSTMCell
 from tensorflow.keras.layers import GRU, GRUCell
+from tensorflow.keras.layers import Conv1D, Conv1DTranspose
+from tensorflow.keras.layers import MaxPooling1D, AvgPool1D
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
 # from tensorflow.keras.layers import GroupNormalization
@@ -21,52 +23,12 @@ if __name__ == "__main__":
 	sys.path.append(os.getcwd())
 
 
-class LSTMCellExtractor(Model):
-    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
-        super(LSTMCellExtractor,self).__init__()
-
-        self.config = extractor_config
-
-        # Initializer
-        if self.config.get('initializer', None) == 'glorot_normal':
-            self.initializer = initializers.glorot_normal()
-        elif self.config.get('initializer', None) == 'he_normal':
-            self.initializer = initializers.he_normal()
-        elif self.config.get('initializer', None) == 'orthogonal':
-            self.initializer = initializers.orthogonal()
-        else:
-            self.initializer = initializers.random_normal()
-
-        # Regularizer
-        if self.config.get('regularizer', None) == 'l1':
-            self.regularizer = regularizers.l1(l=self.config['regularizer']['l1']) # 0.0005
-        elif self.config.get('regularizer', None) == 'l2':
-            self.regularizer = regularizers.l2(l=self.config['regularizer']['l2']) # 0.0005
-        elif self.config.get('regularizer', None) == 'l1_l2':
-            self.regularizer = regularizers.l1_l2(l1=self.config['regularizer']['l1'], l2=self.config['regularizer']['l2']) # 0.0005, 0.0005
-        else:
-            self.regularizer = None
-
-        # Loading the network architecture
-
-
-        # Define the network architecture
-
-
-        self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
-
-    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-
-        feature = self.feature(state)
-
-        return feature
-
-
 class LSTMExtractor(Model):
     def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(LSTMExtractor,self).__init__()
 
         self.config = extractor_config
+        self.extractor_name = self.config['name']
 
         # Initializer
         if self.config.get('initializer', None) == 'glorot_normal':
@@ -80,66 +42,62 @@ class LSTMExtractor(Model):
 
         # Regularizer
         if self.config.get('regularizer', None) == 'l1':
-            self.regularizer = regularizers.l1(l=self.config['regularizer']['l1']) # 0.0005
+            self.regularizer = regularizers.l1(l=self.config['l1'])
         elif self.config.get('regularizer', None) == 'l2':
-            self.regularizer = regularizers.l2(l=self.config['regularizer']['l2']) # 0.0005
+            self.regularizer = regularizers.l2(l=self.config['l2'])
         elif self.config.get('regularizer', None) == 'l1_l2':
-            self.regularizer = regularizers.l1_l2(l1=self.config['regularizer']['l1'], l2=self.config['regularizer']['l2']) # 0.0005, 0.0005
+            self.regularizer = regularizers.l1_l2(l1=self.config['l1'], l2=self.config['l2'])
         else:
             self.regularizer = None
 
         # Loading the network architecture
-
+        self.net_arc = self.config.get('network_architecture', [])
+        if self.config.get('use_norm', False) == True:
+            self.net_list = [None for _ in self.net_arc*2]
+        else:
+            self.net_list = [None for _ in self.net_arc]
 
         # Define the network architecture
+        if self.config.get('use_norm', False) == True:
+            for idx in range(0, len(self.net_arc*2)-2, 2):
+                self.net_list[idx] = LSTM(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
 
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.net_list[idx+1] = LayerNormalization(axis=-1)
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.net_list[idx+1] = BatchNormalization(axis=-1)
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
+            self.net_list[-2] = LSTM(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=False)
+
+            if self.config.get('norm_type', None) == "layer_norm":
+                self.net_list[-1] = LayerNormalization(axis=-1)
+            elif self.config.get('norm_type', None) == "batch_norm":
+                self.net_list[-1] = BatchNormalization(axis=-1)
+            elif self.config.get('norm_type', None) == "group_norm":
+                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+            else:
+                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
+        else:
+            for idx in range(len(self.net_arc)-1):
+                self.net_list[idx] = LSTM(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
+            
+            self.net_list[-1] = LSTM(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=False)
 
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        for idx, net in enumerate(self.net_list):
+            if idx == 0:
+                hidden = net(state)
+            else:
+                hidden = net(hidden)
 
-        feature = self.feature(state)
-
-        return feature
-
-
-class GRUCellExtractor(Model):
-    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
-        super(GRUCellExtractor,self).__init__()
-
-        self.config = extractor_config
-
-        # Initializer
-        if self.config.get('initializer', None) == 'glorot_normal':
-            self.initializer = initializers.glorot_normal()
-        elif self.config.get('initializer', None) == 'he_normal':
-            self.initializer = initializers.he_normal()
-        elif self.config.get('initializer', None) == 'orthogonal':
-            self.initializer = initializers.orthogonal()
-        else:
-            self.initializer = initializers.random_normal()
-
-        # Regularizer
-        if self.config.get('regularizer', None) == 'l1':
-            self.regularizer = regularizers.l1(l=self.config['regularizer']['l1']) # 0.0005
-        elif self.config.get('regularizer', None) == 'l2':
-            self.regularizer = regularizers.l2(l=self.config['regularizer']['l2']) # 0.0005
-        elif self.config.get('regularizer', None) == 'l1_l2':
-            self.regularizer = regularizers.l1_l2(l1=self.config['regularizer']['l1'], l2=self.config['regularizer']['l2']) # 0.0005, 0.0005
-        else:
-            self.regularizer = None
-
-        # Loading the network architecture
-
-
-        # Define the network architecture
-
-
-        self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
-
-    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-
-        feature = self.feature(state)
+        feature = self.feature(hidden)
 
         return feature
 
@@ -149,6 +107,7 @@ class GRUExtractor(Model):
         super(GRUExtractor,self).__init__()
 
         self.config = extractor_config
+        self.extractor_name = self.config['name']
 
         # Initializer
         if self.config.get('initializer', None) == 'glorot_normal':
@@ -162,25 +121,109 @@ class GRUExtractor(Model):
 
         # Regularizer
         if self.config.get('regularizer', None) == 'l1':
-            self.regularizer = regularizers.l1(l=self.config['regularizer']['l1']) # 0.0005
+            self.regularizer = regularizers.l1(l=self.config['l1'])
         elif self.config.get('regularizer', None) == 'l2':
-            self.regularizer = regularizers.l2(l=self.config['regularizer']['l2']) # 0.0005
+            self.regularizer = regularizers.l2(l=self.config['l2'])
         elif self.config.get('regularizer', None) == 'l1_l2':
-            self.regularizer = regularizers.l1_l2(l1=self.config['regularizer']['l1'], l2=self.config['regularizer']['l2']) # 0.0005, 0.0005
+            self.regularizer = regularizers.l1_l2(l1=self.config['l1'], l2=self.config['l2'])
         else:
             self.regularizer = None
 
         # Loading the network architecture
-
+        self.net_arc = self.config.get('network_architecture', [])
+        if self.config.get('use_norm', False) == True:
+            self.net_list = [None for _ in self.net_arc*2]
+        else:
+            self.net_list = [None for _ in self.net_arc]
 
         # Define the network architecture
+        if self.config.get('use_norm', False) == True:
+            for idx in range(0, len(self.net_arc*2)-2, 2):
+                self.net_list[idx] = GRU(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
 
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.net_list[idx+1] = LayerNormalization(axis=-1)
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.net_list[idx+1] = BatchNormalization(axis=-1)
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
+            self.net_list[-2] = GRU(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=False)
+
+            if self.config.get('norm_type', None) == "layer_norm":
+                self.net_list[-1] = LayerNormalization(axis=-1)
+            elif self.config.get('norm_type', None) == "batch_norm":
+                self.net_list[-1] = BatchNormalization(axis=-1)
+            elif self.config.get('norm_type', None) == "group_norm":
+                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+            else:
+                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
+        else:
+            for idx in range(len(self.net_arc)-1):
+                self.net_list[idx] = GRU(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
+            
+            self.net_list[-1] = GRU(self.net_arc[idx], activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=False)
 
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        for idx, net in enumerate(self.net_list):
+            if idx == 0:
+                hidden = net(state)
+            else:
+                hidden = net(hidden)
 
-        feature = self.feature(state)
+        feature = self.feature(hidden)
+
+        return feature
+
+
+class CNN1DExtractor(Model):
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
+        super(CNN1DExtractor,self).__init__()
+
+        self.config = extractor_config
+        self.extractor_name = self.config['name']
+
+        # Initializer
+        if self.config.get('initializer', None) == 'glorot_normal':
+            self.initializer = initializers.glorot_normal()
+        elif self.config.get('initializer', None) == 'he_normal':
+            self.initializer = initializers.he_normal()
+        elif self.config.get('initializer', None) == 'orthogonal':
+            self.initializer = initializers.orthogonal()
+        else:
+            self.initializer = initializers.random_normal()
+
+        # Regularizer
+        if self.config.get('regularizer', None) == 'l1':
+            self.regularizer = regularizers.l1(l=self.config['l1'])
+        elif self.config.get('regularizer', None) == 'l2':
+            self.regularizer = regularizers.l2(l=self.config['l2'])
+        elif self.config.get('regularizer', None) == 'l1_l2':
+            self.regularizer = regularizers.l1_l2(l1=self.config['l1'], l2=self.config['l2'])
+        else:
+            self.regularizer = None
+
+        # Loading the network architecture
+        # Todo
+
+        # Define the network architecture
+        # Todo
+
+        self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
+
+    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        for idx, net in enumerate(self.net_list):
+            if idx == 0:
+                hidden = net(state)
+            else:
+                hidden = net(hidden)
+
+        feature = self.feature(hidden)
 
         return feature
 
@@ -189,44 +232,45 @@ def load_RecurExtractor(extractor_config:Dict, feature_dim):
     if extractor_config.get('name', None) == 'LSTM':
         return LSTMExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'LSTMCell':
-        return LSTMCellExtractor(extractor_config, feature_dim)
-
     elif extractor_config.get('name', None) == 'GRU':
         return GRUExtractor(extractor_config, feature_dim)
 
-    elif extractor_config.get('name', None) == 'GRUCell':
-        return GRUCellExtractor(extractor_config, feature_dim)
-
+    elif extractor_config.get('name', None) == 'CNN1D':
+        return CNN1DExtractor(extractor_config, feature_dim)
+    
     else:
-        raise ValueError("please use the MLPExtractor in ['LSTM', 'LSTMCell', 'GRU', 'GRUCell]")
+        raise ValueError("please use the MLPExtractor in ['LSTM', 'GRU', 'CNN1D']")
 
 
-def test_RecurExtractor(extractor_config:Dict, feature_dim:int)-> None: # Todo
+def test_RecurExtractor(extractor_config:Dict, feature_dim:int)-> None:
     extractor = load_RecurExtractor(extractor_config, feature_dim)
 
     try:
-        test = extractor(np.ones(shape=[128, 128]))
+        test = extractor(np.ones(shape=[128, 4, 128]))
+        print(f'shape of test tensor: {test.shape}')
     except Exception as e:
         print(f"error: {e}")
         print(f"error: {traceback.format_exc()}")
 
 
-if __name__ == "__main__": # Todo
-    from extractor_config import MLP_flatten_extractor_config, MLP_flatten_feature_dim
-    from extractor_config import MLP_mlp_extractor_config, MLP_mlp_feature_dim
+if __name__ == "__main__":
+    from extractor_config import REC_LSTM_extractor_config, REC_LSTM_feature_dim
+    from extractor_config import REC_GRU_extractor_config, REC_GRU_feature_dim
+    from extractor_config import REC_CNN1d_extractor_config, REC_CNN1d_feature_dim
 
     """
-    MLP Extractor
-    1: Flatten Extractor, 2: MLP Extractor
+    Recurrent Extractor
+    1: LSTM Extractor, 2: GRU Extractor, 3: CNN1D Extractor
     """
 
-    test_switch = 2
+    test_switch = 3
 
     # Test any extractor
     if test_switch == 1:
-        test_RecurExtractor(MLP_flatten_extractor_config, MLP_flatten_feature_dim)
+        test_RecurExtractor(REC_LSTM_extractor_config, REC_LSTM_feature_dim)
     elif test_switch == 2:
-        test_RecurExtractor(MLP_mlp_extractor_config, MLP_mlp_feature_dim)
+        test_RecurExtractor(REC_GRU_extractor_config, REC_GRU_feature_dim)
+    elif test_switch == 3:
+        test_RecurExtractor(REC_CNN1d_extractor_config, REC_CNN1d_feature_dim) # Todo
     else:
-        raise ValueError("Please correct the test switch in [1, 2]")
+        raise ValueError("Please correct the test switch in [1, 2, 3]")

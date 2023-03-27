@@ -279,8 +279,8 @@ def agent_network_config(agent_config:Dict, extractor_switch: int, fcn_config:Di
             feature_dim = Graph_GCN_feature_dim
 
         elif extractor_switch == 7: # Custom
-            extractor_config = Custom_simple_inception_extractor_config
-            feature_dim = Custom_simple_inception_feature_dim
+            extractor_config = Custom_simple_gru_extractor_config
+            feature_dim = Custom_simple_gru_feature_dim
         else:
             raise ValueError("Please correct the extractor switch in [1, 2, 3, 4, 5, 6, 7]")
 

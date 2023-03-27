@@ -10,6 +10,7 @@ from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
@@ -59,8 +60,8 @@ class SimpleMLPExtractor(Model):
         self.regularizer = regularizers.l2(l=0.0005)
 
         # Loading and defining the network architecture
-        self.net_arc = self.config.get('network_architecture', [256, 256])
-        self.act_fn = self.config.get('activation_function', 'relu')
+        self.net_arc = [256, 256]
+        self.act_fn = 'relu'
 
         self.l1 = Dense(self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l1_n = LayerNormalization(axis=-1)
@@ -130,8 +131,8 @@ class SimpleInceptionExtractor(Model):
         self.regularizer = regularizers.l2(l=0.0005)
 
         # Loading and defining the network architecture
-        self.net_arc = self.config.get('network_architecture', [256, [128, 128], 256])
-        self.act_fn = self.config.get('activation_function', 'relu')
+        self.net_arc = [256, [128, 64], 256]
+        self.act_fn = 'relu'
 
         self.l1 = Dense(self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l1_n = LayerNormalization(axis=-1)
@@ -168,59 +169,165 @@ class SimpleInceptionExtractor(Model):
 
 # Project 1
 class ResidualExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(ResidualExtractor,self).__init__()
 
-        pass
+        self.config = extractor_config
+        self.extractor_name = self.config['name']
+
+        # Initializer
+        self.initializer = initializers.glorot_normal()
+
+        # Regularizer
+        self.regularizer = regularizers.l2(l=0.0005)
+
+        # Loading and defining the network architecture
+        self.net_arc = [256, 256, 128]
+        self.act_fn = 'relu'
+
+        self.l1 = Dense(self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l1_n = LayerNormalization(axis=-1)
+
+        self.l2 = Dense(self.net_arc[1], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2_n = LayerNormalization(axis=-1)
+
+        self.l3 = Dense(self.net_arc[2], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l3_n = LayerNormalization(axis=-1)
+
+        self.l_jumping = Dense(self.net_arc[2], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l_jumping_n = LayerNormalization(axis=-1)
+
+        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        feature = None
+        '''
+        dim of state: (batch_size, states)
+        '''
+        l1 = self.l1(state)
+        l1_n = self.l1_n(l1)
 
+        l2 = self.l2(l1_n)
+        l2_n = self.l2_n(l2)
+
+        l3 = self.l3(l2_n)
+        l3_n = self.l3_n(l3)
+
+        l_jumping = self.l_jumping(state)
+        l_jumping_n = self.l_jumping_n(l_jumping)
+
+        feature = self.feature(tf.concat((l3_n, l_jumping_n), axis=1))
+        
         return feature
 
 
 class AutoEncoderExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(AutoEncoderExtractor,self).__init__()
 
+        self.config = extractor_config
+        self.extractor_name = self.config['name']
+
+        # Initializer
+        self.initializer = initializers.glorot_normal()
+
+        # Regularizer
+        self.regularizer = regularizers.l2(l=0.0005)
+
+        # Loading and defining the network architecture
+        self.net_arc = [256, 128, 64, 128, 256]
+        self.act_fn = 'relu'
+
+        # Todo
         pass
 
+        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, states)
+        '''
+        # Todo
+        code = None
         feature = None
 
-        return feature
+        return code, feature
 
 
 class UNetExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(AutoEncoderExtractor,self).__init__()
 
         pass
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, states)
+        '''
         feature = None
 
         return feature
 
 
 # Project 2
-class LSTMExtractor(Model):
-    def __init__(self, )-> None:
-        super(LSTMExtractor,self).__init__()
+class SimpleGRUExtractor(Model):
+    def __init__(self, extractor_config, feature_dim)-> None:
+        super(SimpleGRUExtractor,self).__init__()
+        self.config = extractor_config
+        self.extractor_name = self.config['name']
 
-        pass
+        # Initializer
+        self.initializer = initializers.glorot_normal()
+
+        # Regularizer
+        self.regularizer = regularizers.l2(l=0.0005)
+
+        # Loading and defining the network architecture
+        self.net_arc = [256, 256]
+        self.act_fn = 'relu'
+
+        self.l1    = GRU(units=self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
+        self.l1_ln = LayerNormalization(axis=-1)
+
+        self.l2    = GRU(units=self.net_arc[1], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.l2_ln = LayerNormalization(axis=-1)
+
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, states)
+        '''
+        l1 = self.l1(state)
+        l1_ln = self.l1_ln(l1)
+
+        l2 = self.l2(l1_ln)
+        l2_ln = self.l2_ln(l2)
+
+        feature = self.feature(l2_ln)
+
+        return feature
+
+
+class LSTMExtractor(Model):
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
+        super(LSTMExtractor,self).__init__()
+
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
+    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, states)
+        '''
         feature = None
 
         return feature
 
 
 class CNN1DExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(CNN1DExtractor,self).__init__()
 
-        pass
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         feature = None
@@ -229,10 +336,10 @@ class CNN1DExtractor(Model):
 
 
 class BiLSTMExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(BiLSTMExtractor,self).__init__()
 
-        pass
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         feature = None
@@ -242,10 +349,10 @@ class BiLSTMExtractor(Model):
 
 # Project 3
 class AttentionExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(AttentionExtractor,self).__init__()
 
-        pass
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         feature = None
@@ -254,10 +361,10 @@ class AttentionExtractor(Model):
 
 
 class TransDuctiveGNNExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(TransDuctiveGNNExtractor,self).__init__()
 
-        pass
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         feature = None
@@ -266,10 +373,10 @@ class TransDuctiveGNNExtractor(Model):
 
 
 class InductiveGNNExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(TransDuctiveGNNExtractor,self).__init__()
 
-        pass
+        self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         feature = None
@@ -278,7 +385,7 @@ class InductiveGNNExtractor(Model):
 
 
 class TransformerExtractor(Model):
-    def __init__(self, )-> None:
+    def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(TransDuctiveGNNExtractor,self).__init__()
 
         pass
@@ -304,6 +411,9 @@ def load_CustomExtractor(extractor_config:Dict, feature_dim):
 
     elif extractor_config.get('name', None) == 'UNet':
         return UNetExtractor(extractor_config, feature_dim)
+
+    elif extractor_config.get('name', None) == 'SimpleGRU':
+        return SimpleGRUExtractor(extractor_config, feature_dim)
 
     elif extractor_config.get('name', None) == 'LSTM':
         return LSTMExtractor(extractor_config, feature_dim)
@@ -344,45 +454,50 @@ def test_CustomExtractor(extractor_config:Dict, feature_dim:int, test_input: NDA
 
 if __name__ == "__main__":
     from extractor_config import Custom_simple_mlp_extractor_config,    Custom_simple_mlp_feature_dim,    Custom_simple_inception_extractor_config, Custom_simple_inception_feature_dim
-    from extractor_config import Custom_res_extractor_config,           Custom_res_feature_dim,           Custom_ae_extractor_config,               Custom_ae_feature_dim
-    from extractor_config import Custom_u_net_extractor_config,         Custom_u_net_feature_dim,         Custom_lstm_extractor_config,             Custom_lstm_feature_dim
+    from extractor_config import Custom_res_extractor_config,           Custom_res_feature_dim,           Custom_ae_extractor_config,               Custom_ae_feature_dim,               Custom_u_net_extractor_config, Custom_u_net_feature_dim
+
+    from extractor_config import Custom_simple_gru_extractor_config,    Custom_simple_gru_feature_dim,    Custom_lstm_extractor_config,             Custom_lstm_feature_dim
     from extractor_config import Custom_cnn1d_extractor_config,         Custom_cnn1d_feature_dim,         Custom_bi_lstm_extractor_config,          Custom_bi_lstm_feature_dim
+
     from extractor_config import Custom_attention_extractor_config,     Custom_attention_feature_dim,     Custom_transductive_gnn_extractor_config, Custom_transductive_gnn_feature_dim
     from extractor_config import Custom_inductive_gnn_extractor_config, Custom_inductive_gnn_feature_dim, Custom_transformer_extractor_config,      Custom_transformer_feature_dim
 
     """
     Custom Extractor
-    1: SimpleMLP Extractor, 2: SimpleInception Extractor,  3: Residual Extractor,      4: AE Extractor, 
-    5: UNet Extractor,      6: LSTM Extractor,             7: CNN1D Extractor,         8: BiLSTM Extractor,
-    9: Attention Extractor, 10: TransductiveGNN Extractor, 11: InductiveGNN Extractor, 12: Transformer Extractor
+    1: SimpleMLP Extractor, 2: SimpleInception Extractor,  3: Residual Extractor,         4: AE Extractor, 
+    5: UNet Extractor,      6: SimpleGRU Extractor,        7: LSTM Extractor,             8: CNN1D Extractor,
+    9: BiLSTM Extractor,    10: Attention Extractor,       11: TransductiveGNN Extractor, 12: InductiveGNN Extractor,
+    13: Transformer Extractor
     """
 
-    test_switch = 1
+    test_switch = 3
 
     # Test any extractor
     if test_switch == 1:
-        test_CustomExtractor(Custom_simple_mlp_extractor_config, Custom_simple_mlp_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
+        test_CustomExtractor(Custom_simple_mlp_extractor_config, Custom_simple_mlp_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 2:
-        test_CustomExtractor(Custom_simple_inception_extractor_config, Custom_simple_inception_feature_dim, test_input=np.ones(shape=[128, 128])) # Finish
+        test_CustomExtractor(Custom_simple_inception_extractor_config, Custom_simple_inception_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 3:
-        test_CustomExtractor(Custom_res_extractor_config, Custom_res_feature_dim)
+        test_CustomExtractor(Custom_res_extractor_config, Custom_res_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 4:
-        test_CustomExtractor(Custom_ae_extractor_config, Custom_ae_feature_dim)
+        test_CustomExtractor(Custom_ae_extractor_config, Custom_ae_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 5:
-        test_CustomExtractor(Custom_u_net_extractor_config, Custom_u_net_feature_dim)
+        test_CustomExtractor(Custom_u_net_extractor_config, Custom_u_net_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 6:
-        test_CustomExtractor(Custom_lstm_extractor_config, Custom_lstm_feature_dim)
+        test_CustomExtractor(Custom_simple_gru_extractor_config, Custom_simple_gru_feature_dim, test_input=np.ones(shape=[128, 4, 128]))
     elif test_switch == 7:
-        test_CustomExtractor(Custom_cnn1d_extractor_config, Custom_cnn1d_feature_dim)
+        test_CustomExtractor(Custom_lstm_extractor_config, Custom_lstm_feature_dim, test_input=np.ones(shape=[128, 4, 128]))
     elif test_switch == 8:
-        test_CustomExtractor(Custom_bi_lstm_extractor_config, Custom_bi_lstm_feature_dim)
+        test_CustomExtractor(Custom_cnn1d_extractor_config, Custom_cnn1d_feature_dim, test_input=np.ones(shape=[128, 4, 128]))
     elif test_switch == 9:
-        test_CustomExtractor(Custom_attention_extractor_config, Custom_attention_feature_dim)
+        test_CustomExtractor(Custom_bi_lstm_extractor_config, Custom_bi_lstm_feature_dim, test_input=np.ones(shape=[128, 128]))
     elif test_switch == 10:
-        test_CustomExtractor(Custom_transductive_gnn_extractor_config, Custom_transductive_gnn_feature_dim)
+        test_CustomExtractor(Custom_attention_extractor_config, Custom_attention_feature_dim, test_input=None)
     elif test_switch == 11:
-        test_CustomExtractor(Custom_inductive_gnn_extractor_config, Custom_inductive_gnn_feature_dim)
+        test_CustomExtractor(Custom_transductive_gnn_extractor_config, Custom_transductive_gnn_feature_dim, test_input=None)
     elif test_switch == 12:
-        test_CustomExtractor(Custom_transformer_extractor_config, Custom_transformer_feature_dim)
+        test_CustomExtractor(Custom_inductive_gnn_extractor_config, Custom_inductive_gnn_feature_dim, test_input=None)
+    elif test_switch == 13:
+        test_CustomExtractor(Custom_transformer_extractor_config, Custom_transformer_feature_dim, test_input=None)
     else:
         raise ValueError("Please correct the test switch in [1~12]")
