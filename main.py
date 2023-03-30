@@ -11,13 +11,12 @@ if __name__ == "__main__":
 
 from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
-
 from utils.state_logger import StateLogger
+
 
 def main(env_config: Dict,
          agent_config: Dict,
          rl_config: Dict,
-         rl_custom_config: Dict,
          learned_model_path: str,
          result_path: str,
          rl_logger: RLLogger,
@@ -40,8 +39,8 @@ def main(env_config: Dict,
     # Agent
     RLAgent = rl_loader.agent_loader()
     Agent = RLAgent(agent_config, obs_space, act_space)
-    if rl_custom_config['use_learned_model']:
-        Agent.load_models(path=learned_model_path + "score_" + str(rl_custom_config['learned_model_score']) + "_model")
+    if rl_config['use_learned_model']:
+        Agent.load_models(path=learned_model_path + "score_" + str(rl_config['learned_model_score']) + "_model")
     else:
         pass
 
@@ -83,7 +82,7 @@ def main(env_config: Dict,
             obs = np.array(obs)
 
         obs = obs.reshape(-1)
-        if rl_custom_config['use_prev_obs']:
+        if rl_config['use_prev_obs']:
             enlonged_obs = np.concatenate((obs, obs))
 
         action = None
@@ -94,10 +93,10 @@ def main(env_config: Dict,
             episode_step += 1
             total_step += 1
 
-            if rl_custom_config['use_prev_obs']:
-                action, action_values = Agent.action(enlonged_obs, rl_custom_config['use_learned_model'])
+            if rl_config['use_prev_obs']:
+                action, action_values = Agent.action(enlonged_obs, rl_config['use_learned_model'])
             else:
-                action, action_values = Agent.action(obs, rl_custom_config['use_learned_model'])
+                action, action_values = Agent.action(obs, rl_config['use_learned_model'])
 
             # obs parsing per env
             if env_name == 'LunarLander-v2' or env_name == 'highway-v0':
@@ -115,7 +114,7 @@ def main(env_config: Dict,
             obs = np.array(obs)
             obs = obs.reshape(-1)
 
-            if rl_custom_config['use_prev_obs']:
+            if rl_config['use_prev_obs']:
                 if episode_step >= 2:
                     enlonged_obs = np.concatenate((prev_obs, obs))
                 else:
@@ -128,11 +127,11 @@ def main(env_config: Dict,
 
             # Save_xp
             reward_int = 0
-            if rl_custom_config['use_learned_model']:
+            if rl_config['use_learned_model']:
                 pass # does not save the transition
             else:
                 if episode_step >= 2:
-                    if rl_custom_config['use_prev_obs']:
+                    if rl_config['use_prev_obs']:
                         if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
                             reward_int = Agent.get_intrinsic_reward(prev_enlonged_obs, enlonged_obs, prev_action)
                         Agent.save_xp(prev_enlonged_obs, enlonged_obs, reward+reward_int, prev_action, done)
@@ -141,7 +140,7 @@ def main(env_config: Dict,
                             reward_int = Agent.get_intrinsic_reward(prev_obs, obs, prev_action)
                         Agent.save_xp(prev_obs, obs, reward+reward_int, prev_action, done)
 
-            if rl_custom_config['use_prev_obs']:
+            if rl_config['use_prev_obs']:
                 prev_enlonged_obs = enlonged_obs
 
             prev_obs = obs
@@ -152,16 +151,16 @@ def main(env_config: Dict,
                 continue
             
             if Agent.extension_name == 'ICM' or Agent.extension_name == 'RND' or Agent.extension_name == 'NGU':
-                rl_logger.step_logging(Agent, reward_int, rl_custom_config['use_learned_model'])
+                rl_logger.step_logging(Agent, reward_int, rl_config['use_learned_model'])
             else:
-                rl_logger.step_logging(Agent, rl_custom_config['use_learned_model'])
+                rl_logger.step_logging(Agent, rl_config['use_learned_model'])
 
             if rl_config['csv_logging']:
                 state_logger.step_logger(episode_num, episode_step, origin_obs, obs, action_values, action)
 
         env.close()
 
-        rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode=rl_custom_config['use_learned_model'])
+        rl_logger.episode_logging(Agent, episode_score, episode_step, episode_num, episode_rewards, inference_mode=rl_config['use_learned_model'])
         
         if rl_config['csv_logging']:
             state_logger.episode_logger(episode_num, episode_score, episode_step)
@@ -197,26 +196,30 @@ if __name__ == '__main__':
     1: Vanilla,   2: ICM,            3: RND,
     4: NGU,       5: Model Ensemble, 6: TQC
 
-    Extractor #TBD
-    1: None,      2: MLP,            3: Convolutional,
-    4: Recurrent, 5: Attention,      6: Graph
-    7: Custom
+    Extractor
+    1: None, name = None,
+    2: MLP, name = {'Flatten', 'MLP', 'AutoEncoder1D', 'Inception1D', 'UNet1D'},
+    3: Convolutional, name = {#Todo},
+    4: Recurrent, name = {'RNN', 'LSTM', 'GRU', 'CNN1D'},
+    5: Attention, name = {#Todo},
+    6: Graph, name = {#Todo},
+    7: Custom, name = {'SimpleMLP', 'SimpleInception', 'Residual', 'AE', 'UNet', 'SimpleGRU', 'LSTM', 'CNN1D', \
+                       'BiLSTM', 'Attention', 'TransductiveGNN', 'InductiveGNN', 'Transformer'}
 
     """
 
     env_switch = 1
-    agent_switch = 1
-    aux_switch = 1
-    extractor_switch = 2
+    agent_switch = 5
+    aux_switch = 8
+    extractor_switch = 1
 
     fcn_config={'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'network_architecture': [256],\
                 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch, aux_switch)
-    agent_config = agent_network_config(agent_config=agent_config, extractor_switch=extractor_switch, fcn_config=fcn_config)
+    agent_config = agent_network_config(agent_config=agent_config, extractor_switch=extractor_switch, extractor_name=None, fcn_config=fcn_config)
 
-    rl_config = {'csv_logging': True, 'wandb': False, 'tensorboard': True}
-    rl_custom_config = {'use_prev_obs': True, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}
+    rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': True, 'use_prev_obs': False, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}
 
     parent_path = str(os.path.abspath(''))
     time_string = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -224,10 +227,10 @@ if __name__ == '__main__':
     result_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string
 
     if os.name == 'nt':
-        learned_model_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + rl_custom_config['learned_time'] + "\\"
+        learned_model_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + rl_config['learned_time'] + "\\"
         data_save_path = parent_path + f"\\results\\{env_config['env_name']}\\{agent_config['agent_name']}_{agent_config['extension']['name']}_result\\" + time_string + '\\'
     elif os.name == 'posix':
-        learned_model_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + rl_custom_config['learned_time'] + "/"
+        learned_model_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + rl_config['learned_time'] + "/"
         data_save_path = parent_path + f"/results/{env_config['env_name']}/{agent_config['agent_name']}_{agent_config['extension']['name']}_result/" + time_string + '/'
 
     summary_writer = SummaryWriter(result_path+'/tensorboard/')
@@ -242,4 +245,4 @@ if __name__ == '__main__':
 
     state_logger = StateLogger(env_config, agent_config, rl_config, data_save_path)
 
-    main(env_config, agent_config, rl_config, rl_custom_config, learned_model_path, result_path, rl_logger, rl_loader, state_logger)
+    main(env_config, agent_config, rl_config, learned_model_path, result_path, rl_logger, rl_loader, state_logger)

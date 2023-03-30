@@ -3,32 +3,38 @@
 #####################################################
 
 ## For Flatten extractor
-MLP_Flatten_extractor_config = {'type': 'MLP', 'name': 'Flatten', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005}
+MLP_Flatten_extractor_config = {'type': 'MLP', 'name': 'Flatten', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005}
 MLP_Flatten_feature_dim = 256
 
 ## For MLP extractor
-MLP_MLP_extractor_config = {'type': 'MLP', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+MLP_MLP_extractor_config = {'type': 'MLP', 'name': 'MLP', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 MLP_MLP_feature_dim = 128
 
 ## For AutoEncoder1D extractor
-MLP_AE1d_extractor_config = {'type': 'MLP', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+MLP_AE1d_extractor_config = {'type': 'MLP', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [[256, 128], 64, [128, 256]], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 MLP_AE1d_feature_dim = 128
 
 ## For Inception1D extractor
-MLP_Inception1d_extractor_config = {'type': 'MLP', 'name': 'Inception1d', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+MLP_Inception1d_extractor_config = {'type': 'MLP', 'name': 'Inception1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, [128, 64, 32], 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 MLP_Inception1d_feature_dim = 128
 
 ## For UNet1D extractor
-MLP_UNet1d_extractor_config = {'type': 'MLP', 'name': 'UNet1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
-                        'network_architecture': [[[128, 128], [64,64], [32,32]],16, [[16, 32], [32, 64], [64,128]]], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+MLP_UNet1d_extractor_config = {'type': 'MLP', 'name': 'UNet1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
+                        'network_architecture': [[[128, 128], [64,64], [32,32]], 16, [[16, 32], [32, 64], [64,128]]],
+                        'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 MLP_UNet1d_feature_dim = 128
 
 ###########################################################
 ############ Recurrent Extractor configuraiton ############
 ###########################################################
+
+## For LSTM extractor
+REC_RNN_extractor_config = {'type': 'Recurrent', 'name': 'RNN', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
+                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+REC_RNN_feature_dim = 128
 
 ## For LSTM extractor
 REC_LSTM_extractor_config = {'type': 'Recurrent', 'name': 'LSTM', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
@@ -41,7 +47,7 @@ REC_GRU_extractor_config = {'type': 'Recurrent', 'name': 'GRU', 'initializer': '
 REC_GRU_feature_dim = 128
 
 ## For CNN1D extractor
-REC_CNN1d_extractor_config = {'type': 'Recurrent', 'name': 'CNN1D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+REC_CNN1d_extractor_config = {'type': 'Recurrent', 'name': 'CNN1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 REC_CNN1d_feature_dim = 128
 
@@ -50,22 +56,22 @@ REC_CNN1d_feature_dim = 128
 ###############################################################
 
 ## For CNN2D extractor
-Convolutional_CNN2d_extractor_config = {'type': 'Convolutional', 'name': 'CNN2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Convolutional_CNN2d_extractor_config = {'type': 'Convolutional', 'name': 'CNN2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_CNN2d_feature_dim = 128
 
 ## For AutoEncoder2D extractor
-Convolutional_AE2d_extractor_config = {'type': 'Convolutional', 'name': 'AutoEncoder2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Convolutional_AE2d_extractor_config = {'type': 'Convolutional', 'name': 'AutoEncoder2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_AE2d_feature_dim = 128
 
 ## For Inception2d extractor
-Convolutional_Inception2d_extractor_config = {'type': 'Convolutional', 'name': 'Inception2d', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Convolutional_Inception2d_extractor_config = {'type': 'Convolutional', 'name': 'Inception2d', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_Inception2d_feature_dim = 128
 
 ## For UNet2D extractor
-Convolutional_UNet2d_extractor_config = {'type': 'Convolutional', 'name': 'UNet2D', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Convolutional_UNet2d_extractor_config = {'type': 'Convolutional', 'name': 'UNet2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_UNet2d_feature_dim = 128
 
@@ -74,17 +80,17 @@ Convolutional_UNet2d_feature_dim = 128
 ###########################################################
 
 ## For Attention extractor
-Attention_attention_extractor_config = {'type': 'Attention', 'name': 'Attention', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Attention_attention_extractor_config = {'type': 'Attention', 'name': 'Attention', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Attention_attention_feature_dim = 128
 
 ## For MultiHeadAttention extractor
-Attention_multi_head_attention_extractor_config = {'type': 'Attention', 'name': 'MultiHeadAttention', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Attention_multi_head_attention_extractor_config = {'type': 'Attention', 'name': 'MultiHeadAttention', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Attention_multi_head_attention_feature_dim = 128
 
 ## For Transformer extractor
-Attention_transformer_extractor_config = {'type': 'Attention', 'name': 'Transformer', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Attention_transformer_extractor_config = {'type': 'Attention', 'name': 'Transformer', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Attention_transformer_feature_dim = 128
 
@@ -93,12 +99,12 @@ Attention_transformer_feature_dim = 128
 #######################################################
 
 ## For GCN extractor
-Graph_GCN_extractor_config = {'type': 'Graph', 'name': 'GCN', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Graph_GCN_extractor_config = {'type': 'Graph', 'name': 'GCN', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Graph_GCN_feature_dim = 128
 
 ## For GAT extractor
-Graph_GAT_extractor_config = {'type': 'Graph', 'name': 'GAT', 'initializer': 'glorot_normal', 'regularizer': 'l1', 'l1': 0.0005,
+Graph_GAT_extractor_config = {'type': 'Graph', 'name': 'GAT', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
                         'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Graph_GAT_feature_dim = 128
 

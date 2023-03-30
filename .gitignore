@@ -1,6 +1,7 @@
 # files
 __pycache__
-main_nota.py
+Safe_QR_DQN.py
+Safe_MMDQN.py
 
 # directory
 10-gSDE/

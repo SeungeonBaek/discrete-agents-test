@@ -27,19 +27,20 @@ class SimpleMLPExtractor(Model):
     SimpleMLP extractor which could be configured by user
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
-                network_architecture: network_architecture of MLP. ex) [256, 256]
-                activation_function: activation function of whole layers. ex) 'relu'
             }
 
         feature_dim: shpae of feature. ex) 128
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
+        net_arc: network architecture
+        act_fn: activation function of each layer
         l1: first layer
         l1_n: layer normalization layer following first layer
         l2: second layer
@@ -91,11 +92,9 @@ class SimpleInceptionExtractor(Model):
     SimpleInception extractor which could be configured by user
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
-                network_architecture: network_architecture of MLP. ex) [128, [128, 128], 256]
-                activation_function: activation function of whole layers. ex) 'relu'
             }
 
         feature_dim: shpae of feature. ex) 128
@@ -104,14 +103,14 @@ class SimpleInceptionExtractor(Model):
         config: extractor configuration
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
+        net_arc: network architecture
+        act_fn: activation function of each layer
         l1: first level layer
         l1_n: layer normalization layer following l1 layer
-
             l2_1: first of second level layer
             l2_1n: layer normalization layer following l2_1 layer
             l2_2: second of second level layer
             l2_2n: layer normalization layer following l2_2 layer
-
         l3: third level layer
         l3_n: layer normalization layer following l3 layer
 
@@ -270,6 +269,31 @@ class UNetExtractor(Model):
 
 # Project 2
 class SimpleGRUExtractor(Model):
+    """
+    SimpleGRU extractor which could be configured by user
+
+    Argument:
+        extractor_config: agent configuration which is realted with RL algorithm
+            {
+                name: name of feature extractor
+            }
+
+        feature_dim: shpae of feature. ex) 128
+
+    Properties:
+        config: extractor configuration
+        initializer: initializer of whole layers
+        regularizer: regularizer of whole layers
+        net_arc: network architecture
+        act_fn: activation function of each layer
+        l1: first level layer
+        l1_n: layer normalization layer following l1 layer
+        l2: second level layer
+        l2_n: layer normalization layer following l2 layer
+
+        feature: final feature layer
+
+    """
     def __init__(self, extractor_config, feature_dim)-> None:
         super(SimpleGRUExtractor,self).__init__()
         self.config = extractor_config
@@ -286,10 +310,10 @@ class SimpleGRUExtractor(Model):
         self.act_fn = 'relu'
 
         self.l1    = GRU(units=self.net_arc[0], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, return_sequences=True)
-        self.l1_ln = LayerNormalization(axis=-1)
+        self.l1_n = LayerNormalization(axis=-1)
 
         self.l2    = GRU(units=self.net_arc[1], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l2_ln = LayerNormalization(axis=-1)
+        self.l2_n = LayerNormalization(axis=-1)
 
         self.feature = Dense(feature_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
@@ -298,12 +322,12 @@ class SimpleGRUExtractor(Model):
         dim of state: (batch_size, time_window, states)
         '''
         l1 = self.l1(state)
-        l1_ln = self.l1_ln(l1)
+        l1_n = self.l1_n(l1)
 
-        l2 = self.l2(l1_ln)
-        l2_ln = self.l2_ln(l2)
+        l2 = self.l2(l1_n)
+        l2_n = self.l2_n(l2)
 
-        feature = self.feature(l2_ln)
+        feature = self.feature(l2_n)
 
         return feature
 

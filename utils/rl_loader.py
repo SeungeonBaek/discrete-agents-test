@@ -72,15 +72,14 @@ class RLLoader():
     def agent_loader(self):
         if self.agent_config['agent_name'] == 'DQN':
             from agents.DQN import Agent
-
         elif self.agent_config['agent_name'] == 'PPO':
             from agents.PPO import Agent
-
         elif self.agent_config['agent_name'] == 'SAC':
             from agents.SAC import Agent
-
         elif self.agent_config['agent_name'] == 'QR_DQN':
             from agents.QR_DQN import Agent
+        elif self.agent_config['agent_name'] == 'Safe_QR_DQN':
+            from agents.Safe_QR_DQN import Agent
         elif self.agent_config['agent_name'] == 'QUOTA':
             from agents.QUOTA import Agent
         elif self.agent_config['agent_name'] == 'IQN':
@@ -91,10 +90,8 @@ class RLLoader():
             from agents.FQF import Agent
         elif self.agent_config['agent_name'] == 'C2D':
             from agents.FQF import Agent
-
         elif self.agent_config['agent_name'] == 'Agent57':
             from agents.Agent_57 import Agent
-
         elif self.agent_config['agent_name'] == 'REDQ':
             from agents.REDQ import Agent
 

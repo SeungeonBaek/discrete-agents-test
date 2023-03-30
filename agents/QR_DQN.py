@@ -47,7 +47,7 @@ class DistCritic(Model): # Distributional Q network
         l2 = self.l2(l1_ln)
         l2_ln = self.l2_ln(l2)
         value_dist = self.value_dist(l2_ln)
-        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num)) # check 필요
+        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num))
 
         return value_dist
 

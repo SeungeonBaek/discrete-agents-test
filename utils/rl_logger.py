@@ -45,7 +45,7 @@ class RLLogger():
             else:
                 updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
-        elif self.agent_config['agent_name'] == 'QR_DQN':
+        elif self.agent_config['agent_name'] == 'QR_DQN' or self.agent_config['agent_name'] == 'Safe_QR_DQN':
             if Agent.extension_name == 'ICM':
                 updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
@@ -115,7 +115,7 @@ class RLLogger():
                 self.summary_writer.add_scalar('02_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
                 self.summary_writer.add_scalar('02_Critic/Critic_value', critic_value, Agent.update_step)
 
-        elif self.agent_config['agent_name'] == 'QR_DQN':
+        elif self.agent_config['agent_name'] == 'QR_DQN' or self.agent_config['agent_name'] == 'Safe_QR_DQN':
             if updated:
                 self.summary_writer.add_scalar('00_Step/Epsilon', epsilon, Agent.update_step)
                 self.summary_writer.add_scalar('01_Loss/Critic_loss', critic_loss, Agent.update_step)
@@ -191,7 +191,7 @@ class RLLogger():
             else:
                 updated, actor_loss, critic_loss, trgt_q_mean, critic_value, critic_q_value = Agent.update(inference_mode)
 
-        elif self.agent_config['agent_name'] == 'QR_DQN':
+        elif self.agent_config['agent_name'] == 'QR_DQN' or self.agent_config['agent_name'] == 'Safe_QR_DQN':
             if Agent.extension_name == 'ICM':
                 updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
             elif Agent.extension_name == 'RND':
@@ -267,7 +267,7 @@ class RLLogger():
                     '02_Critic/Target_Q_mean': trgt_q_mean, 
                     '02_Critic/Critic_value': critic_value
                 }, step=Agent.update_step)
-        elif self.agent_config['agent_name'] == 'QR_DQN':
+        elif self.agent_config['agent_name'] == 'QR_DQN' or self.agent_config['agent_name'] == 'Safe_QR_DQN':
             if updated:
                 self.wandb_session.log({
                     "00_Step/Epsilon": epsilon,

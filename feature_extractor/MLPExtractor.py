@@ -25,7 +25,7 @@ class FlattenExtractor(Model):
     Flatten feature extractor
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
                 initializer: initializer of final layers. ex) 'glorot_normal'
@@ -38,6 +38,7 @@ class FlattenExtractor(Model):
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
         feature: final layer
@@ -73,6 +74,9 @@ class FlattenExtractor(Model):
         self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, states)
+        '''
         flatten = self.flatten(state)
         feature = self.feature(flatten)
 
@@ -84,7 +88,7 @@ class MLPExtractor(Model):
     MLP extractor which could be configured by user
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
                 initializer: initializer of whole layers. ex) 'glorot_normal'
@@ -101,6 +105,7 @@ class MLPExtractor(Model):
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
         net_arc: architecture of network
@@ -161,6 +166,9 @@ class MLPExtractor(Model):
         self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, states)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
@@ -172,19 +180,20 @@ class MLPExtractor(Model):
         return feature
 
 
-class AutoEncoder1DExtractor(Model):
+class AutoEncoder1DExtractor(Model): # Todo
     """
-    MLP extractor which could be configured by user
+    AutoEncoder with MLP extractor which could be configured by user
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
                 initializer: initializer of whole layers. ex) 'glorot_normal'
                 regularizer: regularizer of whole layers. ex) 'l1_l2'
                     'l1': value of l1 coefficient if user choose regularizer as 'l1' or 'l1_l2'
                     'l2': value of l2 coefficient if user choose regularizer as 'l2' or 'l1_l2'
-                network_architecture: network_architecture of MLP. ex) [256, 256]
+                network_architecture: network_architecture of UNet.
+                    ex) [[256, 128], 64, [128, 256]]
                 use_norm: indicator whether the usage of normalization layer. ex) True
                 norm_type: type of normalization layer. ex) 'layer_norm'
                 act_fn: activation function of whole layers. ex) 'relu'
@@ -194,11 +203,17 @@ class AutoEncoder1DExtractor(Model):
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
         net_arc: architecture of network
-        net_list: list of layers in whole network
+        contract_net_list: list of contraction layers
+        code_net: code network
+        expand_net_list: list of exapnsion layers
         feature: final layer
+
+    Concept:
+        256 => 128 => 64 => 128 => 256
 
     """
     def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
@@ -216,6 +231,39 @@ class AutoEncoder1DExtractor(Model):
         # Loading and defining the network architecture
         self.net_arc = self.config.get('network_architecture', [[256, 128], 64, [128, 256]])
         self.act_fn = self.config.get('act_fn', 'relu')
+        self.contract_net_list = []
+        self.code_net = None
+        self.expand_net_list = []
+
+        # Define the network architecture
+        # Contraction
+        for inner_node in self.net_arc[0]:
+            self.contract_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+
+            if self.config.get('norm_type', None) == "layer_norm":
+                self.contract_net_list.append(LayerNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "batch_norm":
+                self.contract_net_list.append(BatchNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "group_norm":
+                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+            else:
+                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
+        # Code
+        self.code_net = Dense(self.net_arc[1], activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
+        # Expansion
+        for inner_node in self.net_arc[-1]:
+            self.expand_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+
+            if self.config.get('norm_type', None) == "layer_norm":
+                self.expand_net_list.append(LayerNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "batch_norm":
+                self.expand_net_list.append(BatchNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "group_norm":
+                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+            else:
+                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
         self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
@@ -248,7 +296,7 @@ class AutoEncoder1DExtractor(Model):
 
 class Inception1DExtractor(Model):
     """
-    MLP extractor which could be configured by user
+    Inception with MLP extractor which could be configured by user
 
     Argument:
         extractor_config: agent configuration which is realted with RL algorithm
@@ -258,7 +306,7 @@ class Inception1DExtractor(Model):
                 regularizer: regularizer of whole layers. ex) 'l1_l2'
                     'l1': value of l1 coefficient if user choose regularizer as 'l1' or 'l1_l2'
                     'l2': value of l2 coefficient if user choose regularizer as 'l2' or 'l1_l2'
-                network_architecture: network_architecture of MLP. ex) [256, [128 64], 256]
+                network_architecture: network_architecture of Inception. ex) [256, [128 64], 256]
                 use_norm: indicator whether the usage of normalization layer. ex) True
                 norm_type: type of normalization layer. ex) 'layer_norm'
                 act_fn: activation function of whole layers. ex) 'relu'
@@ -268,10 +316,12 @@ class Inception1DExtractor(Model):
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
         net_arc: architecture of network
         net_list: list of layers in whole network
+        inner_net_list: list of layers in inner network
         feature: final layer
 
     """
@@ -289,39 +339,56 @@ class Inception1DExtractor(Model):
 
         # Loading the network architecture
         self.net_arc = self.config.get('network_architecture', [256, [128, 64, 32], 256])
-        if self.config.get('use_norm', False) == True:
-            self.net_list = [None for _ in self.net_arc*2]
-        else:
-            self.net_list = [None for _ in self.net_arc]
+        self.net_list = []
+        self.inner_net_list = []
 
         # Define the network architecture
+        for idx, net_info in enumerate(self.net_arc):
+            if isinstance(net_info, int):
+                self.net_list.append(Dense(net_info, activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+                if self.config.get('use_norm', False) == True:
+                    if self.config.get('norm_type', None) == "layer_norm":
+                        self.net_list.append(LayerNormalization(axis=-1))
+                    elif self.config.get('norm_type', None) == "batch_norm":
+                        self.net_list.append(BatchNormalization(axis=-1))
+                    elif self.config.get('norm_type', None) == "group_norm":
+                        raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                    else:
+                        raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
-        # Todo
+            elif isinstance(net_info, List):
+                for inner_idx, inner_net_info in enumerate(net_info):
+                    self.inner_net_list.append(Dense(inner_net_info, activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+                    if self.config.get('use_norm', False) == True:
+                        if self.config.get('norm_type', None) == "layer_norm":
+                            self.net_list.append(LayerNormalization(axis=-1))
+                        elif self.config.get('norm_type', None) == "batch_norm":
+                            self.net_list.append(BatchNormalization(axis=-1))
+                        elif self.config.get('norm_type', None) == "group_norm":
+                            raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                        else:
+                            raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
-        if self.config.get('use_norm', False) == True:
-            for idx in range(0, len(self.net_arc*2), 2):
-                self.net_list[idx] = Dense(self.net_arc[int(idx/2)], activation = 'self.config.get('act_fn', 'relu')', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+                self.net_list.append(self.inner_net_list)
 
-                if self.config.get('norm_type', None) == "layer_norm":
-                    self.net_list[idx+1] = LayerNormalization(axis=-1)
-                elif self.config.get('norm_type', None) == "batch_norm":
-                    self.net_list[idx+1] = BatchNormalization(axis=-1)
-                elif self.config.get('norm_type', None) == "group_norm":
-                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
-                else:
-                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
-        else:
-            for idx, node_num in enumerate(self.net_arc):
-                self.net_list[idx] = Dense(node_num, activation = self.config.get('act_fn', 'relu') , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+            else:
+                raise RuntimeError()
 
         self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, states)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
             else:
-                hidden = net(hidden)
+                if isinstance(net, Model):
+                    hidden = net(hidden)
+                elif isinstance(net, List):
+                    for inner_net in net:
+                        hidden = inner_net(hidden)
 
         feature = self.feature(hidden)
 
@@ -330,17 +397,18 @@ class Inception1DExtractor(Model):
 
 class UNet1DExtractor(Model):
     """
-    MLP extractor which could be configured by user
+    Unet with MLP extractor which could be configured by user
 
     Argument:
-        extractor_config: agent configuration which is realted with RL algorithm => QR-DQN
+        extractor_config: agent configuration which is realted with RL algorithm
             {
                 name: name of feature extractor
                 initializer: initializer of whole layers. ex) 'glorot_normal'
                 regularizer: regularizer of whole layers. ex) 'l1_l2'
                     'l1': value of l1 coefficient if user choose regularizer as 'l1' or 'l1_l2'
                     'l2': value of l2 coefficient if user choose regularizer as 'l2' or 'l1_l2'
-                network_architecture: network_architecture of MLP. ex) [256, 256]
+                network_architecture: network_architecture of UNet.
+                    ex) [[[128, 128], [64,64], [32,32]], 16, [[16, 32], [32, 64], [64,128]]]
                 use_norm: indicator whether the usage of normalization layer. ex) True
                 norm_type: type of normalization layer. ex) 'layer_norm'
                 act_fn: activation function of whole layers. ex) 'relu'
@@ -350,11 +418,21 @@ class UNet1DExtractor(Model):
 
     Properties:
         config: extractor configuration
+        name: extractor name
         initializer: initializer of whole layers
         regularizer: regularizer of whole layers
         net_arc: architecture of network
-        net_list: list of layers in whole network
+        contract_net_list: list of contraction layers
+        code_net: code network
+        expand_net_list: list of exapnsion layers
+        act_fn: activation function of each layer
         feature: final layer
+
+    Concept:
+        128, 128                  =>                  64 + 64, 128       
+                =>64, 64          =>         32 + 32, 64
+                        =>32, 32  =>  16+16, 32
+                                  =>  16
 
     """
     def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
@@ -370,13 +448,10 @@ class UNet1DExtractor(Model):
         self.regularizer = regularizers.l2(l=0.0005)
 
         # Loading the network architecture and activation function
-        self.net_arc = self.config.get('network_architecture', [[[128, 128], [64,64], [32,32]],16, [[16, 32], [32, 64], [64,128]]])
-
-        # Todo
-        if self.config.get('use_norm', False) == True:
-            self.net_list = [None for _ in self.net_arc*2]
-        else:
-            self.net_list = [None for _ in self.net_arc]
+        self.net_arc = self.config.get('network_architecture', [[[128, 128], [64,64], [32,32]], 16, [[16, 32], [32, 64], [64,128]]])
+        self.contract_net_list = []
+        self.code_net = None
+        self.expand_net_list = []
 
         if self.config.get('act_fn', None) == 'relu':
             self.act_fn = tf.nn.relu
@@ -398,29 +473,68 @@ class UNet1DExtractor(Model):
             raise ValueError("Please check the activation function you used")
 
         # Define the network architecture
+        # Contraction
+        for inner_arc in self.net_arc[0]:
+            for inner_node in inner_arc:
+                self.contract_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
-        # Todo
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.contract_net_list.append(LayerNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.contract_net_list.append(BatchNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
-        for idx in range(0, len(self.net_arc*2), 2):
-            self.net_list[idx] = Dense(self.net_arc[int(idx/2)], activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        # Code
+        self.code_net = Dense(self.net_arc[1], activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
-            if self.config.get('norm_type', None) == "layer_norm":
-                self.net_list[idx+1] = LayerNormalization(axis=-1)
-            elif self.config.get('norm_type', None) == "batch_norm":
-                self.net_list[idx+1] = BatchNormalization(axis=-1)
-            elif self.config.get('norm_type', None) == "group_norm":
-                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
-            else:
-                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+        # Expansion
+        for inner_arc in self.net_arc[-1]:
+            for inner_node in inner_arc:
+                self.expand_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.expand_net_list.append(LayerNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.expand_net_list.append(BatchNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        for idx, net in enumerate(self.net_list):
+        '''
+        dim of state: (batch_size, states)
+        '''
+        jump = []
+        # Contraction
+        for idx, net in enumerate(self.contract_net_list):
             if idx == 0:
                 hidden = net(state)
             else:
-                hidden = net(hidden)
+                if idx % 2 == 0:
+                    hidden = net(hidden)
+                else:
+                    hidden = self.act_fn(net(hidden))
+                    if idx % 4 == 3:
+                        jump.append(hidden)
+
+        # Code
+        code = self.code_net(hidden)
+
+        # Expansion
+        for idx, net in enumerate(self.expand_net_list):
+            if idx == 0:
+                hidden = net(jump[-1])
+                hidden = tf.concat(hidden, code)
+            else:
+                if idx % 2 == 0:
+                    transferred = net(jump[-(int(idx//2)+1)])
+                    hidden = tf.concat(hidden, transferred)
+                else:
+                    hidden = self.act_fn(net(hidden))
 
         feature = self.feature(hidden)
 
@@ -434,7 +548,7 @@ def load_MLPExtractor(extractor_config:Dict, feature_dim: int)-> Model:
         return MLPExtractor(extractor_config, feature_dim)
     elif extractor_config.get('name', None) == 'AutoEncoder1D':
         return AutoEncoder1DExtractor(extractor_config, feature_dim)
-    elif extractor_config.get('name', None) == 'Inception1d':
+    elif extractor_config.get('name', None) == 'Inception1D':
         return Inception1DExtractor(extractor_config, feature_dim)
     elif extractor_config.get('name', None) == 'UNet1D':
         return UNet1DExtractor(extractor_config, feature_dim)
@@ -467,7 +581,7 @@ if __name__ == "__main__":
     5: UNet1D Extractor
     """
 
-    test_switch = 4
+    test_switch = 5
 
     # Test any extractor
     if test_switch == 1:
