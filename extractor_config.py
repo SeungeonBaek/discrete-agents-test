@@ -12,7 +12,7 @@ MLP_MLP_extractor_config = {'type': 'MLP', 'name': 'MLP', 'initializer': 'glorot
 MLP_MLP_feature_dim = 128
 
 ## For AutoEncoder1D extractor
-MLP_AE1d_extractor_config = {'type': 'MLP', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
+MLP_AE1d_extractor_config = {'type': 'MLP', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'lr': 0.00005,
                         'network_architecture': [[256, 128], 64, [128, 256]], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 MLP_AE1d_feature_dim = 128
 

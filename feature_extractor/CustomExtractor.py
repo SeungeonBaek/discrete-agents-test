@@ -225,6 +225,7 @@ class AutoEncoderExtractor(Model):
 
         self.config = extractor_config
         self.extractor_name = self.config['name']
+        self.ae_lr = 0.0005
 
         # Initializer
         self.initializer = initializers.glorot_normal()
@@ -239,8 +240,6 @@ class AutoEncoderExtractor(Model):
         # Todo
         pass
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
         dim of state: (batch_size, states)
@@ -249,7 +248,7 @@ class AutoEncoderExtractor(Model):
         code = None
         feature = None
 
-        return code, feature
+        return code, reconstruct
 
 
 class UNetExtractor(Model):

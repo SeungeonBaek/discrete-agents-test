@@ -106,7 +106,10 @@ class ConfigurableCritic(Model): # Q network
         self.value = Dense(act_space, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        feature = self.feature_extractor(state)
+        if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            feature, _ = self.feature_extractor(state)
+        else:
+            feature = self.feature_extractor(state)
 
         for idx, net in enumerate(self.fcn_list):
             if idx == 0:
@@ -227,6 +230,8 @@ class Agent:
         if self.agent_config['is_configurable_critic']:
             self.critic_main = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
             self.critic_target = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
+            if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                self.ae_opt = Adam(self.critic_main.feature_extractor.ae_lr)
         else:
             self.critic_main = Critic(self.act_space)
             self.critic_target = Critic(self.act_space)
@@ -364,6 +369,22 @@ class Agent:
             rewards = tf.convert_to_tensor(rewards, dtype = tf.float32)
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
+
+        # Autoencoder update
+        if self.agent_config['is_configurable_critic']:
+            if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                ae_variable = self.critic_main.feature_extractor.trainable_variables
+                with tf.GradientTape() as tape_ae:
+                    tape_ae.watch(ae_variable)
+
+                    _, recon = self.critic_main.feature_extractor(states)
+
+                    recon_loss = tf.reduce_mean(tf.math.square(tf.subtract(states, recon)))
+
+                grads_ae, _ = tf.clip_by_global_norm(tape_ae.gradient(recon_loss, ae_variable), 0.5)
+                self.ae_opt.apply_gradients(zip(grads_ae, ae_variable))            
+
+                recon_loss = recon_loss.numpy()
 
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:

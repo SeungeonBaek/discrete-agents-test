@@ -321,17 +321,14 @@ def agent_network_config(agent_config:Dict, extractor_switch: int, extractor_nam
         else:
             raise ValueError("Please correct the extractor switch in [1, 2, 3, 4, 5, 6, 7]")
 
-        if extractor_name in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
-            pass
-        else:
-            agent_config['is_configurable_critic'] = True
+        agent_config['is_configurable_critic'] = True
 
-            agent_config['critic_config'] = {}
-            agent_config['critic_config']['name'] = extractor_config['name'] + '_critic'
+        agent_config['critic_config'] = {}
+        agent_config['critic_config']['name'] = extractor_config['name'] + '_critic'
 
-            agent_config['critic_config']['network_config'] = {}
-            agent_config['critic_config']['network_config']['feature_extractor_config'] = extractor_config
-            agent_config['critic_config']['network_config']['feature_extractor_config']['feature_dim'] = feature_dim
-            agent_config['critic_config']['network_config']['fcn_config'] = fcn_config
+        agent_config['critic_config']['network_config'] = {}
+        agent_config['critic_config']['network_config']['feature_extractor_config'] = extractor_config
+        agent_config['critic_config']['network_config']['feature_extractor_config']['feature_dim'] = feature_dim
+        agent_config['critic_config']['network_config']['fcn_config'] = fcn_config
 
     return agent_config

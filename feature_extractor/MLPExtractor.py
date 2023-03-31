@@ -209,8 +209,8 @@ class AutoEncoder1DExtractor(Model): # Todo
         net_arc: architecture of network
         contract_net_list: list of contraction layers
         code_net: code network
+        cond_net_n: normalization layer for code network
         expand_net_list: list of exapnsion layers
-        feature: final layer
 
     Concept:
         256 => 128 => 64 => 128 => 256
@@ -221,6 +221,7 @@ class AutoEncoder1DExtractor(Model): # Todo
 
         self.config = extractor_config
         self.extractor_name = self.config['name']
+        self.ae_lr = self.config['lr']
 
         # Initializer
         self.initializer = initializers.glorot_normal()
@@ -232,7 +233,7 @@ class AutoEncoder1DExtractor(Model): # Todo
         self.net_arc = self.config.get('network_architecture', [[256, 128], 64, [128, 256]])
         self.act_fn = self.config.get('act_fn', 'relu')
         self.contract_net_list = []
-        self.code_net = None
+        self.code_net, self.code_net_n = None, None
         self.expand_net_list = []
 
         # Define the network architecture
@@ -252,46 +253,56 @@ class AutoEncoder1DExtractor(Model): # Todo
         # Code
         self.code_net = Dense(self.net_arc[1], activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
+        if self.config.get('norm_type', None) == "layer_norm":
+            self.code_net_n = LayerNormalization(axis=-1)
+        elif self.config.get('norm_type', None) == "batch_norm":
+            self.code_net_n = BatchNormalization(axis=-1)
+        elif self.config.get('norm_type', None) == "group_norm":
+            raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+        else:
+            raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+
         # Expansion
-        for inner_node in self.net_arc[-1]:
-            self.expand_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
-
-            if self.config.get('norm_type', None) == "layer_norm":
-                self.expand_net_list.append(LayerNormalization(axis=-1))
-            elif self.config.get('norm_type', None) == "batch_norm":
-                self.expand_net_list.append(BatchNormalization(axis=-1))
-            elif self.config.get('norm_type', None) == "group_norm":
-                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+        for idx, inner_node in enumerate(self.net_arc[-1]):
+            if idx == len(self.net_arc[-1])-1:
+                self.expand_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
             else:
-                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+                self.expand_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.expand_net_list.append(LayerNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.expand_net_list.append(BatchNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
         dim of state: (batch_size, states)
         '''
         # Contraction
-        contract_l1 = self.contract_l1(state)
-        contract_l1_n = self.contract_l1_n(contract_l1)
-
-        contract_l2 = self.contract_l2(contract_l1_n)
-        contract_l2_n = self.contract_l2_n(contract_l2)
+        for idx, net in enumerate(self.contract_net_list):
+            if idx == 0:
+                hidden = net(state)
+            else:
+                hidden = net(hidden)
 
         # Code
-        code = self.code(contract_l2_n)
-        code_n = self.code_n(code)
+        code = self.code_net(hidden)
+        code = self.code_net_n(code)
 
         # Expansion
-        expand_l1 = self.expand_l1(code_n)
-        expand_l1_n = self.expand_l1_n(expand_l1)
+        for idx, net in enumerate(self.expand_net_list):
+            if idx == 0:
+                hidden = net(code)
+            else:
+                hidden = net(hidden)
 
-        expand_l2 = self.expand_l2(expand_l1_n)
-        expand_l2_n = self.expand_l2_n(expand_l2)
+        reconstruct = hidden
 
-        feature = self.feature(expand_l2_n)
-
-        return code_n, feature
+        return code, reconstruct
 
 
 class Inception1DExtractor(Model):
@@ -476,7 +487,7 @@ class UNet1DExtractor(Model):
         # Contraction
         for inner_arc in self.net_arc[0]:
             for inner_node in inner_arc:
-                self.contract_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+                self.contract_net_list.append(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
                 if self.config.get('norm_type', None) == "layer_norm":
                     self.contract_net_list.append(LayerNormalization(axis=-1))
@@ -493,7 +504,7 @@ class UNet1DExtractor(Model):
         # Expansion
         for inner_arc in self.net_arc[-1]:
             for inner_node in inner_arc:
-                self.expand_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+                self.expand_net_list.append(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
                 if self.config.get('norm_type', None) == "layer_norm":
                     self.expand_net_list.append(LayerNormalization(axis=-1))
