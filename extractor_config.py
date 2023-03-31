@@ -13,7 +13,7 @@ MLP_MLP_feature_dim = 128
 
 ## For AutoEncoder1D extractor
 MLP_AE1d_extractor_config = {'type': 'MLP', 'name': 'AutoEncoder1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'lr': 0.00005,
-                        'network_architecture': [[256, 128], 64, [128, 256]], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+                        'network_architecture': [[256, 128], 64, [128, 256]], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu', 'reconstruct_dim': 8}
 MLP_AE1d_feature_dim = 128
 
 ## For Inception1D extractor
@@ -122,7 +122,7 @@ Custom_simple_inception_extractor_config = {'type': 'Custom', 'name': 'SimpleInc
 Custom_res_extractor_config = {'type': 'Custom', 'name': 'Residual'}; Custom_res_feature_dim = 128
 
 ## For AE extractor
-Custom_ae_extractor_config = {'type': 'Custom', 'name': 'AE'}; Custom_ae_feature_dim = 128
+Custom_ae_extractor_config = {'type': 'Custom', 'name': 'AE', 'reconstrunct_dim': 8, 'lr': 0.0005}; Custom_ae_feature_dim = 128
 
 ## For UNet extractor
 Custom_u_net_extractor_config = {'type': 'Custom', 'name': 'UNet'}; Custom_u_net_feature_dim = 128

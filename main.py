@@ -209,15 +209,16 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 5
-    aux_switch = 8
-    extractor_switch = 1
+    agent_switch = 1
+    aux_switch = 1
+    extractor_switch = 2
+    extractor_name = 'AutoEncoder1D'
 
     fcn_config={'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'network_architecture': [256],\
                 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 
     env_config, agent_config = env_agent_config(env_switch, agent_switch, aux_switch)
-    agent_config = agent_network_config(agent_config=agent_config, extractor_switch=extractor_switch, extractor_name=None, fcn_config=fcn_config)
+    agent_config = agent_network_config(agent_config=agent_config, extractor_switch=extractor_switch, extractor_name=extractor_name, fcn_config=fcn_config)
 
     rl_config = {'csv_logging': False, 'wandb': False, 'tensorboard': True, 'use_prev_obs': False, 'use_learned_model': False, 'learned_time': '2022-11-29_14-58-22', 'learned_model_score': 61.283}
 

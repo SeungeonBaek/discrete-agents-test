@@ -24,14 +24,25 @@ class RLLogger():
     def step_logging_tensorboard(self, Agent, reward_int = None, inference_mode: bool = False):
         # Update
         if self.agent_config['agent_name'] == 'DQN':
-            if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
-            elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
-            elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+            if self.agent_config['is_configurable_critic']:
+                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                    if Agent.extension_name == 'ICM':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss, recon_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'RND':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss, recon_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'NGU':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
+                    else:
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+                if Agent.extension_name == 'ICM':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
+                elif Agent.extension_name == 'RND':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
+                elif Agent.extension_name == 'NGU':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+                else:
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':
@@ -100,6 +111,9 @@ class RLLogger():
                     self.summary_writer.add_scalar('03_RND/RND_pred_loss', rnd_pred_loss, Agent.update_step)
                 elif Agent.extension_name == 'NGU':
                     pass
+                if self.agent_config['is_configurable_critic']:
+                    if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                        self.summary_writer.add_scalar('01_Loss/Recon_loss', recon_loss, Agent.update_step)
 
         elif self.agent_config['agent_name'] == 'PPO':
             if updated:
@@ -170,14 +184,25 @@ class RLLogger():
     def step_logging_wandb(self, Agent, reward_int, inference_mode: bool = False):
         # Update
         if self.agent_config['agent_name'] == 'DQN':
-            if Agent.extension_name == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
-            elif Agent.extension_name == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
-            elif Agent.extension_name == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+            if self.agent_config['is_configurable_critic']:
+                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                    if Agent.extension_name == 'ICM':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'RND':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'NGU':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+                    else:
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
-                updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+                if Agent.extension_name == 'ICM':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss, recon_loss = Agent.update(inference_mode)
+                elif Agent.extension_name == 'RND':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss, recon_loss = Agent.update(inference_mode)
+                elif Agent.extension_name == 'NGU':
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
+                else:
+                    updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
 
         elif self.agent_config['agent_name'] == 'PPO':
             if self.agent_config['extension']['name'] == 'Model_Ensemble':

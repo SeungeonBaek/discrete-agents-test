@@ -230,7 +230,7 @@ class Agent:
         if self.agent_config['is_configurable_critic']:
             self.critic_main = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
             self.critic_target = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
-            if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
                 self.ae_opt = Adam(self.critic_main.feature_extractor.ae_lr)
         else:
             self.critic_main = Critic(self.act_space)
@@ -372,7 +372,7 @@ class Agent:
 
         # Autoencoder update
         if self.agent_config['is_configurable_critic']:
-            if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
                 ae_variable = self.critic_main.feature_extractor.trainable_variables
                 with tf.GradientTape() as tape_ae:
                     tape_ae.watch(ae_variable)
@@ -384,7 +384,7 @@ class Agent:
                 grads_ae, _ = tf.clip_by_global_norm(tape_ae.gradient(recon_loss, ae_variable), 0.5)
                 self.ae_opt.apply_gradients(zip(grads_ae, ae_variable))            
 
-                recon_loss = recon_loss.numpy()
+                recon_loss_val = recon_loss.numpy()
 
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
@@ -488,14 +488,25 @@ class Agent:
             for i in range(self.batch_size):
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])
 
-        if self.extension_name == 'ICM':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
-        elif self.extension_name == 'RND':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val
-        elif self.extension_name == 'NGU':
-            pass
+        if self.agent_config['is_configurable_critic']:
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                if self.extension_name == 'ICM':
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val, recon_loss_val
+                elif self.extension_name == 'RND':
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val, recon_loss_val
+                elif self.extension_name == 'NGU':
+                    pass
+                else:
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, recon_loss_val
         else:
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
+            if self.extension_name == 'ICM':
+                return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
+            elif self.extension_name == 'RND':
+                return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val
+            elif self.extension_name == 'NGU':
+                pass
+            else:
+                return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
 
     def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.

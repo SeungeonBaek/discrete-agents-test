@@ -1,6 +1,6 @@
 import traceback
 
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Any, Tuple
 from numpy.typing import NDArray
 
 import tensorflow as tf
@@ -239,7 +239,7 @@ class AutoEncoder1DExtractor(Model): # Todo
         # Define the network architecture
         # Contraction
         for inner_node in self.net_arc[0]:
-            self.contract_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+            self.contract_net_list.append(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
 
             if self.config.get('norm_type', None) == "layer_norm":
                 self.contract_net_list.append(LayerNormalization(axis=-1))
@@ -264,21 +264,20 @@ class AutoEncoder1DExtractor(Model): # Todo
 
         # Expansion
         for idx, inner_node in enumerate(self.net_arc[-1]):
-            if idx == len(self.net_arc[-1])-1:
-                self.expand_net_list(Dense(inner_node, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+            self.expand_net_list.append(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+
+            if self.config.get('norm_type', None) == "layer_norm":
+                self.expand_net_list.append(LayerNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "batch_norm":
+                self.expand_net_list.append(BatchNormalization(axis=-1))
+            elif self.config.get('norm_type', None) == "group_norm":
+                raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
             else:
-                self.expand_net_list(Dense(inner_node, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+                raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
-                if self.config.get('norm_type', None) == "layer_norm":
-                    self.expand_net_list.append(LayerNormalization(axis=-1))
-                elif self.config.get('norm_type', None) == "batch_norm":
-                    self.expand_net_list.append(BatchNormalization(axis=-1))
-                elif self.config.get('norm_type', None) == "group_norm":
-                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
-                else:
-                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+        self.reconstruct = Dense(self.config.get('reconstruct_dim', 8), activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
-    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+    def call(self, state: Union[NDArray, tf.Tensor])-> Tuple[tf.Tensor]:
         '''
         dim of state: (batch_size, states)
         '''
@@ -300,7 +299,7 @@ class AutoEncoder1DExtractor(Model): # Todo
             else:
                 hidden = net(hidden)
 
-        reconstruct = hidden
+        reconstruct = self.reconstruct(hidden)
 
         return code, reconstruct
 
@@ -515,6 +514,8 @@ class UNet1DExtractor(Model):
                 else:
                     raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
 
+        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
         dim of state: (batch_size, states)
@@ -539,11 +540,14 @@ class UNet1DExtractor(Model):
         for idx, net in enumerate(self.expand_net_list):
             if idx == 0:
                 hidden = net(jump[-1])
-                hidden = tf.concat(hidden, code)
+                hidden = tf.concat((hidden, code), axis=1)
             else:
                 if idx % 2 == 0:
-                    transferred = net(jump[-(int(idx//2)+1)])
-                    hidden = tf.concat(hidden, transferred)
+                    if idx % 4 == 0:
+                        transferred = net(jump[-(int(idx//4)+1)])
+                        hidden = tf.concat((hidden, transferred), axis=1)
+                    else:
+                        hidden = net(hidden)
                 else:
                     hidden = self.act_fn(net(hidden))
 
@@ -564,15 +568,20 @@ def load_MLPExtractor(extractor_config:Dict, feature_dim: int)-> Model:
     elif extractor_config.get('name', None) == 'UNet1D':
         return UNet1DExtractor(extractor_config, feature_dim)
     else:
-        raise ValueError("please use the MLPExtractor in ['Flatten', 'MLP', 'AE1D', 'Inception1D']")
+        raise ValueError("please use the MLPExtractor in ['Flatten', 'MLP', 'AutoEncoder1D', 'Inception1D']")
 
 
 def test_MLPExtractor(extractor_config:Dict, feature_dim:int)-> None:
     extractor = load_MLPExtractor(extractor_config, feature_dim)
 
     try:
-        test = extractor(np.ones(shape=[128, 128]))
-        print(f'shape of test tensor: {test.shape}')
+        if extractor_config["name"] == "AutoEncoder1D":
+            test, reconst = extractor(np.ones(shape=[128, 8]))
+            print(f'shape of test tensor: {test.shape}')
+            print(f'shape of reconst tensor: {reconst.shape}')
+        else:
+            test = extractor(np.ones(shape=[128, 8]))
+            print(f'shape of test tensor: {test.shape}')
     except Exception as e:
         print(f"error: {e}")
         print(f"error: {traceback.format_exc()}")
@@ -592,7 +601,7 @@ if __name__ == "__main__":
     5: UNet1D Extractor
     """
 
-    test_switch = 5
+    test_switch = 3
 
     # Test any extractor
     if test_switch == 1:

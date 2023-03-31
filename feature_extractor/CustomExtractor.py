@@ -70,7 +70,7 @@ class SimpleMLPExtractor(Model):
         self.l2 = Dense(self.net_arc[1], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2_n = LayerNormalization(axis=-1)
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.feature = Dense(feature_dim, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
@@ -144,7 +144,7 @@ class SimpleInceptionExtractor(Model):
         self.l3 = Dense(self.net_arc[2], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l3_n = LayerNormalization(axis=-1)
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.feature = Dense(feature_dim, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
@@ -196,7 +196,7 @@ class ResidualExtractor(Model):
         self.l_jumping = Dense(self.net_arc[2], activation=self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l_jumping_n = LayerNormalization(axis=-1)
 
-        self.feature = Dense(feature_dim, activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.feature = Dense(feature_dim, activation = self.act_fn, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
@@ -225,7 +225,7 @@ class AutoEncoderExtractor(Model):
 
         self.config = extractor_config
         self.extractor_name = self.config['name']
-        self.ae_lr = 0.0005
+        self.ae_lr = self.config.get('lr', 0.0005)
 
         # Initializer
         self.initializer = initializers.glorot_normal()
@@ -240,13 +240,16 @@ class AutoEncoderExtractor(Model):
         # Todo
         pass
 
+        self.reconstruct = Dense(self.config['reconstrunct_dim'], activation = 'linear', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
         dim of state: (batch_size, states)
         '''
         # Todo
-        code = None
-        feature = None
+        code = self.code(None)
+
+        reconstruct = self.reconstruct(None)
 
         return code, reconstruct
 
