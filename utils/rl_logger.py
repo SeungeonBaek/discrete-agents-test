@@ -25,7 +25,7 @@ class RLLogger():
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if self.agent_config['is_configurable_critic']:
-                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                     if Agent.extension_name == 'ICM':
                         updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss, recon_loss = Agent.update(inference_mode)
                     elif Agent.extension_name == 'RND':
@@ -112,7 +112,7 @@ class RLLogger():
                 elif Agent.extension_name == 'NGU':
                     pass
                 if self.agent_config['is_configurable_critic']:
-                    if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                    if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                         self.summary_writer.add_scalar('01_Loss/Recon_loss', recon_loss, Agent.update_step)
 
         elif self.agent_config['agent_name'] == 'PPO':
@@ -185,7 +185,7 @@ class RLLogger():
         # Update
         if self.agent_config['agent_name'] == 'DQN':
             if self.agent_config['is_configurable_critic']:
-                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                     if Agent.extension_name == 'ICM':
                         updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
                     elif Agent.extension_name == 'RND':

@@ -106,7 +106,7 @@ class ConfigurableCritic(Model): # Q network
         self.value = Dense(act_space, activation = None)
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        if self.extractor_config['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+        if self.extractor_config['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
             feature, _ = self.feature_extractor(state)
         else:
             feature = self.feature_extractor(state)
@@ -230,7 +230,7 @@ class Agent:
         if self.agent_config['is_configurable_critic']:
             self.critic_main = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
             self.critic_target = ConfigurableCritic(self.act_space, self.agent_config['critic_config'])
-            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                 self.ae_opt = Adam(self.critic_main.feature_extractor.ae_lr)
         else:
             self.critic_main = Critic(self.act_space)
@@ -331,14 +331,25 @@ class Agent:
         self.update_call_step += 1
 
         if inference_mode == True or (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
-            if self.extension_name == 'ICM':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'RND':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'NGU':
-                return False, 0.0, 0.0, 0.0, 0.0
+            if self.agent_config['is_configurable_critic']:
+                if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
+                    if self.extension_name == 'ICM':
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                    elif self.extension_name == 'RND':
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                    elif self.extension_name == 'NGU':
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0
+                    else:
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0
             else:
-                return False, 0.0, 0.0, 0.0, 0.0
+                if self.extension_name == 'ICM':
+                    return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                elif self.extension_name == 'RND':
+                    return False, 0.0, 0.0, 0.0, 0.0, 0.0
+                elif self.extension_name == 'NGU':
+                    return False, 0.0, 0.0, 0.0, 0.0
+                else:
+                    return False, 0.0, 0.0, 0.0, 0.0
 
         updated = True
         self.update_step += 1
@@ -372,7 +383,7 @@ class Agent:
 
         # Autoencoder update
         if self.agent_config['is_configurable_critic']:
-            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                 ae_variable = self.critic_main.feature_extractor.trainable_variables
                 with tf.GradientTape() as tape_ae:
                     tape_ae.watch(ae_variable)
@@ -489,7 +500,7 @@ class Agent:
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])
 
         if self.agent_config['is_configurable_critic']:
-            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            if self.agent_config['critic_config']['network_config']['feature_extractor_config']['name'] in ('AutoEncoder1D', 'autoencoder1D', 'AE1D', 'AE1d', 'ae1D', 'ae1d', 'AutoEncoder2D', 'autoencoder2D', 'AE2D', 'AE2d', 'ae2D', 'ae2d'):
                 if self.extension_name == 'ICM':
                     return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val, recon_loss_val
                 elif self.extension_name == 'RND':
