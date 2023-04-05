@@ -225,9 +225,9 @@ def eval_main(eval_num:int,
         eval_step += 1
 
         if rl_config['use_prev_obs']:
-            action, action_values = agent.action(enlonged_obs, rl_config['use_learned_model'])
+            action, action_values = agent.action(enlonged_obs, True)
         else:
-            action, action_values = agent.action(obs, rl_config['use_learned_model'])
+            action, action_values = agent.action(obs, True)
 
         # obs parsing per env
         if env_name == 'LunarLander-v2' or env_name == 'highway-v0':
