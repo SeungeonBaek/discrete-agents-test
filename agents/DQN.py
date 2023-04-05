@@ -341,6 +341,15 @@ class Agent:
                         return False, 0.0, 0.0, 0.0, 0.0, 0.0
                     else:
                         return False, 0.0, 0.0, 0.0, 0.0, 0.0
+                else:
+                    if self.extension_name == 'ICM':
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                    elif self.extension_name == 'RND':
+                        return False, 0.0, 0.0, 0.0, 0.0, 0.0
+                    elif self.extension_name == 'NGU':
+                        return False, 0.0, 0.0, 0.0, 0.0
+                    else:
+                        return False, 0.0, 0.0, 0.0, 0.0
             else:
                 if self.extension_name == 'ICM':
                     return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -509,6 +518,15 @@ class Agent:
                     pass
                 else:
                     return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, recon_loss_val
+            else:
+                if self.extension_name == 'ICM':
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
+                elif self.extension_name == 'RND':
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val
+                elif self.extension_name == 'NGU':
+                    pass
+                else:
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
         else:
             if self.extension_name == 'ICM':
                 return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val

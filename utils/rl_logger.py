@@ -40,6 +40,15 @@ class RLLogger():
                         updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
                     else:
                         updated, critic_loss, trgt_q_mean, critic_value, epsilon, recon_loss = Agent.update(inference_mode)
+                else:
+                    if Agent.extension_name == 'ICM':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'RND':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon, rnd_pred_loss = Agent.update(inference_mode)
+                    elif Agent.extension_name == 'NGU':
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
+                    else:
+                        updated, critic_loss, trgt_q_mean, critic_value, epsilon = Agent.update(inference_mode)
             else:
                 if Agent.extension_name == 'ICM':
                     updated, critic_loss, trgt_q_mean, critic_value, epsilon, icm_state_loss, icm_action_loss = Agent.update(inference_mode)
