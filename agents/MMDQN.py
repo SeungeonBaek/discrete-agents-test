@@ -1,4 +1,4 @@
-from typing import Dict, Union, Any, Tuple
+from typing import Dict, Union, Any
 from numpy.typing import NDArray
 
 import tensorflow as tf
@@ -21,14 +21,13 @@ from agents.RND_model import RND_target, RND_predict
 
 from feature_extractor import *
 
-
 class DistCritic(Model): # Distributional Q network
     def __init__(self,
-                 particle_num: int,
+                 quantile_num: int,
                  obs_space: int,
                  action_space: int)-> None:
         super(DistCritic,self).__init__()
-        self.particle_num = particle_num
+        self.quantile_num = quantile_num
 
         self.obs_space = obs_space
         self.action_space = action_space
@@ -40,15 +39,15 @@ class DistCritic(Model): # Distributional Q network
         self.l1_ln = LayerNormalization(axis=-1)
         self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.l2_ln = LayerNormalization(axis=-1)
-        self.value_dist = Dense(self.action_space * self.particle_num, activation = None)
+        self.value_dist = Dense(self.action_space * self.quantile_num, activation = None)
 
-    def call(self, state: Union[NDArray, tf.Tensor])-> Tuple[tf.Tensor, tf.Tensor]:
-        l1 = self.l1(state) # Todo: check!
+    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        l1 = self.l1(state)
         l1_ln = self.l1_ln(l1)
         l2 = self.l2(l1_ln)
         l2_ln = self.l2_ln(l2)
         value_dist = self.value_dist(l2_ln)
-        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.particle_num))
+        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num))
 
         return value_dist
 
@@ -56,13 +55,13 @@ class DistCritic(Model): # Distributional Q network
 class Agent:
     """
     Argument:
-        agent_config: agent configuration which is realted with RL algorithm => QR-DQN
+        agent_config: agent configuration which is realted with RL algorithm => MMDQN
             agent_config:
                 {
-                    name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
-                    buffer_size, use_PER, use_ERE, reward_normalize
+                    name, gamma, tau, quantile_num, epsilon, epsilon_decaying_rate, min_epsilon, update_freq, target_update_freq,
+                    buffer_size, warm_up, lr_critic, buffer_size, use_PER, use_ERE, reward_normalize
                     extension = {
-                        'name', 'use_DDQN'
+                        'name', 'use_DDQN', 'kernel'
                     }
                 }
         obs_space: shpae of observation
@@ -76,8 +75,7 @@ class Agent:
         gamma: discount rate
         tau: polyak update parameter
 
-        particle_num: number of quantiles for distributional critic
-        tau_hat: quantile values
+        quantile_num: number of quantiles for distributional critic
 
         epsilon: exploration related hyperparam
         epsilon_decaying_rate: decaying rate of epsilon
@@ -143,8 +141,7 @@ class Agent:
         self.gamma = self.agent_config['gamma']
         self.tau = self.agent_config['tau']
 
-        self.particle_num = self.agent_config['particle_num']
-        self.bandwidth_list = self.agent_config['bandwidth_list']
+        self.quantile_num = self.agent_config['quantile_num']
 
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
@@ -165,8 +162,8 @@ class Agent:
         # network config
         self.critic_lr_main = self.agent_config['lr_critic']
 
-        self.critic_main = DistCritic(self.particle_num, self.obs_space, self.act_space)
-        self.critic_target = DistCritic(self.particle_num, self.obs_space, self.act_space)
+        self.critic_main = DistCritic(self.quantile_num, self.obs_space, self.act_space)
+        self.critic_target = DistCritic(self.quantile_num, self.obs_space, self.act_space)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)
@@ -194,21 +191,22 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray, is_test: bool)-> NDArray: # Todo: check!
+    def action(self, obs: NDArray, is_test: bool)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         value_dist = self.critic_main(obs)
-        values = tf.reduce_mean(value_dist, axis=2)
         # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
         if is_test == True:
-            action = np.argmax(values.numpy())
+            mean_value = np.mean(value_dist.numpy(), axis=2)
+            action = np.argmax(mean_value)
 
         else:
             random_val = np.random.rand()
             if self.update_step > self.warm_up:
                 if random_val > self.epsilon:
-                    action = np.argmax(values.numpy())
+                    mean_value = np.mean(value_dist.numpy(), axis=2)
+                    action = np.argmax(mean_value)
                 else:
                     action = np.random.randint(self.act_space)
 
@@ -218,7 +216,7 @@ class Agent:
             else:
                 action = np.random.randint(self.act_space)
 
-        return action, values.numpy()
+        return action, value_dist.numpy()
 
     def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0
@@ -319,7 +317,8 @@ class Agent:
             # print(f'in update, target_q_dist_next: {target_q_dist_next.shape}')
 
             target_q_dist = tf.expand_dims(rewards, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(dones, dtype=tf.float32)), axis=1)
-            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.particle_num, 1])
+            target_q_dist = tf.stop_gradient(target_q_dist)
+            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
             # print(f'in update, target_q_dist: {target_q_dist.shape}')
             # print(f'in update, target_q_dist_tile: {target_q_dist_tile.shape}')
 
@@ -331,7 +330,7 @@ class Agent:
             # print(f'in update, current_indices: {current_indices.shape}')
             # print(f'in update, current_q_dist: {current_q_dist.shape}')
 
-            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.particle_num])
+            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
             # print(f'in update, current_q_dist_tile: {current_q_dist_tile.shape}')
 
             # loss
@@ -340,13 +339,13 @@ class Agent:
             # print(f'in update, td_error: {td_error.shape}')
             # print(f'in update, huber_loss: {huber_loss.shape}')
             
-            tau = tf.reshape(np.array(self.tau_hat), [1, self.particle_num])
+            tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
             inv_tau = 1.0 - tau
             # print(f'in update, tau: {tau.shape}')
             # print(f'in update, inv_tau: {inv_tau.shape}')
 
-            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.particle_num, 1])
-            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.particle_num, 1])
+            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
+            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
             # print(f'in update, tau_tile: {tau_tile.shape}')
             # print(f'in update, inv_tau_tile: {inv_tau_tile.shape}')
 
@@ -443,24 +442,24 @@ class Agent:
             target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
 
             target_q_dist = tf.expand_dims(reward_tf, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(done_tf, dtype=tf.float32)), axis=1)
-            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.particle_num, 1])
+            target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
 
             # current
             current_q_dists = self.critic_main(state_tf)
             current_indices = tf.stop_gradient(tf.stack([[0], tf.cast(action_tf, tf.int32)], axis=1))
             current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
 
-            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.particle_num])
+            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
 
             # loss
             td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
             huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
             
-            tau = tf.reshape(np.array(self.tau_hat), [1, self.particle_num])
+            tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
             inv_tau = 1.0 - tau
 
-            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.particle_num, 1])
-            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.particle_num, 1])
+            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
+            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
 
             critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau_tile, huber_loss), tf.multiply(tau_tile, huber_loss))
             critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
