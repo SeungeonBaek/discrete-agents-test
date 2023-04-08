@@ -312,8 +312,8 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 5
-    aux_switch = 8
+    agent_switch = 7
+    aux_switch = 1
     extractor_switch = 1
     extractor_name = 'AutoEncoder1D'
 

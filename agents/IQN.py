@@ -9,7 +9,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, ReLU
 from tensorflow.keras.layers import LayerNormalization
 
 from utils.replay_buffer import ExperienceMemory
@@ -23,10 +23,12 @@ from feature_extractor import *
 
 class DistCritic(Model): # Distributional Q network
     def __init__(self,
+                 quantile_dim: int,
                  quantile_num: int,
                  obs_space: int,
                  action_space: int)-> None:
         super(DistCritic,self).__init__()
+        self.quantile_dim = quantile_dim
         self.quantile_num = quantile_num
 
         self.obs_space = obs_space
@@ -35,31 +37,60 @@ class DistCritic(Model): # Distributional Q network
         self.initializer = initializers.glorot_normal()
         self.regularizer = regularizers.l2(l=0.0005)
         
-        self.l1 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l1_ln = LayerNormalization(axis=-1)
-        self.l2 = Dense(256, activation = 'relu' , kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.l2_ln = LayerNormalization(axis=-1)
-        self.value_dist = Dense(self.action_space * self.quantile_num, activation = None)
+        # feature extractor
+        self.psi_1 = Dense(256, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.psi_1_ln = LayerNormalization(axis=-1)
+        self.psi_2 = Dense(self.quantile_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.psi_2_ln = LayerNormalization(axis=-1)
 
-    def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
-        l1 = self.l1(state) # Todo: check!
-        l1_ln = self.l1_ln(l1)
-        l2 = self.l2(l1_ln)
-        l2_ln = self.l2_ln(l2)
-        value_dist = self.value_dist(l2_ln)
-        value_dist = tf.reshape(value_dist, shape=(state.shape[0], self.action_space, self.quantile_num)) # check 필요
+        # phi
+        self.pis = tf.constant(tf.constant(np.pi, dtype=tf.float32) * tf.cast(tf.range(1, self.quantile_dim + 1, 1), dtype=tf.float32))
+        self.phi = Dense(self.quantile_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.phi_ln = LayerNormalization(axis=-1) # Todo
 
-        return value_dist
+        # value
+        self.ff = Dense(128, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.ff_ln = LayerNormalization(axis=-1)
+        self.value = Dense(self.action_space, activation = None)
+
+    def call(self, state: Union[NDArray, tf.Tensor], pre_determined_tau=None)-> tf.Tensor:
+        # feature extractor psi
+        psi_1 = self.psi_1(state)
+        psi_1_ln = self.psi_1_ln(psi_1)
+        psi_2 = self.psi_2(psi_1_ln)
+        psi = self.psi_2_ln(psi_2)
+        psi = tf.tile(tf.expand_dims(psi,1), [1, self.quantile_num, 1])
+
+        # phi
+        if pre_determined_tau == None:
+            tau = tf.random.uniform([state.shape[0], self.quantile_num, 1], minval=0, maxval=1, dtype=tf.float32)
+        else:
+            tau = pre_determined_tau
+        tau_tile = tf.tile(tau, [1, 1, self.quantile_dim])
+
+        cos_tau = tf.cos(tf.multiply(self.pis, tau_tile))
+        phi = self.phi(cos_tau)
+        psi_phi = tf.multiply(psi, phi)
+
+        # value
+        ff = self.ff(tf.reshape(psi_phi, (-1, self.quantile_dim)))
+        ff_ln = self.ff_ln(ff)
+
+        value_dist = self.value(ff_ln)
+        value_dist = tf.reshape(value_dist, [state.shape[0], self.quantile_num, self.action_space])
+        value_dist = tf.transpose(value_dist, [0, 2, 1])
+
+        return value_dist, tau
 
 
 class Agent:
     """
     Argument:
-        agent_config: agent configuration which is realted with RL algorithm => QR-DQN
+        agent_config: agent configuration which is realted with RL algorithm => IQN
             agent_config:
                 {
-                    name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
-                    buffer_size, use_PER, use_ERE, reward_normalize
+                    name, gamma, tau, quantile_dim, quantile_num, epsilon, epsilon_decaying_rate, min_epsilon, update_freq,
+                    target_update_freq, buffer_size, warm_up, lr_critic, buffer_size, use_PER, use_ERE, reward_normalize
                     extension = {
                         'name', 'use_DDQN'
                     }
@@ -75,8 +106,8 @@ class Agent:
         gamma: discount rate
         tau: polyak update parameter
 
+        quantile_dim: dimension of quantiles for distributional critic
         quantile_num: number of quantiles for distributional critic
-        tau_hat: quantile values
 
         epsilon: exploration related hyperparam
         epsilon_decaying_rate: decaying rate of epsilon
@@ -142,8 +173,8 @@ class Agent:
         self.gamma = self.agent_config['gamma']
         self.tau = self.agent_config['tau']
 
+        self.quantile_dim = self.agent_config['quantile_dim']
         self.quantile_num = self.agent_config['quantile_num']
-        self.tau_hat = np.array([(2*(i-1) + 1) / (2 * self.quantile_num) for i in range(1, self.quantile_num + 1)], dtype=np.float32)
 
         self.epsilon = self.agent_config['epsilon']
         self.epsilon_decaying_rate = self.agent_config['epsilon_decaying_rate']
@@ -164,8 +195,8 @@ class Agent:
         # network config
         self.critic_lr_main = self.agent_config['lr_critic']
 
-        self.critic_main = DistCritic(self.quantile_num, self.obs_space, self.act_space)
-        self.critic_target = DistCritic(self.quantile_num, self.obs_space, self.act_space)
+        self.critic_main = DistCritic(self.quantile_dim, self.quantile_num, self.obs_space, self.act_space)
+        self.critic_target = DistCritic(self.quantile_dim, self.quantile_num, self.obs_space, self.act_space)
         self.critic_target.set_weights(self.critic_main.get_weights())
         self.critic_opt_main = Adam(self.critic_lr_main)
         self.critic_main.compile(optimizer=self.critic_opt_main)
@@ -191,23 +222,23 @@ class Agent:
             self.rnd_opt = Adam(self.rnd_lr)
 
         elif self.extension_name == 'NGU':
-            self.icm_lr = self.extension_config['ngu_lr']
+            self.ngu_lr = self.extension_config['ngu_lr']
 
     def action(self, obs: NDArray, is_test: bool)-> NDArray: # Todo: check!
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
-        value_dist = self.critic_main(obs)
+        value_dist, _ = self.critic_main(obs)
         # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
         if is_test == True:
-            mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+            mean_value = np.mean(value_dist.numpy(), axis=2)
             action = np.argmax(mean_value)
 
         else:
             random_val = np.random.rand()
             if self.update_step > self.warm_up:
                 if random_val > self.epsilon:
-                    mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+                    mean_value = np.mean(value_dist.numpy(), axis=2)
                     action = np.argmax(mean_value)
                 else:
                     action = np.random.randint(self.act_space)
@@ -309,9 +340,19 @@ class Agent:
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:  # Todo backpropagation related code
             tape_critic.watch(critic_variable)
-            
+
+            # current
+            current_q_dists, tau = self.critic_main(states)
+            current_indices = tf.stop_gradient(tf.stack([range(self.batch_size), tf.cast(actions, tf.int32)], axis=1))
+            current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
+            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
+            # print(f'in update, current_q_dists: {current_q_dists.shape}')
+            # print(f'in update, current_indices: {current_indices.shape}')
+            # print(f'in update, current_q_dist: {current_q_dist.shape}')
+            # print(f'in update, current_q_dist_tile: {current_q_dist_tile.shape}')
+
             # target
-            target_q_dists = self.critic_target(next_states)
+            target_q_dists, _ = self.critic_target(next_states, tau)
             target_indices = tf.stack([range(self.batch_size), tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
             target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
             # print(f'in update, target_q_dists: {target_q_dists.shape}')
@@ -324,41 +365,21 @@ class Agent:
             # print(f'in update, target_q_dist: {target_q_dist.shape}')
             # print(f'in update, target_q_dist_tile: {target_q_dist_tile.shape}')
 
-            # current
-            current_q_dists = self.critic_main(states)
-            current_indices = tf.stop_gradient(tf.stack([range(self.batch_size), tf.cast(actions, tf.int32)], axis=1))
-            current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
-            # print(f'in update, current_q_dists: {current_q_dists.shape}')
-            # print(f'in update, current_indices: {current_indices.shape}')
-            # print(f'in update, current_q_dist: {current_q_dist.shape}')
-
-            current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
-            # print(f'in update, current_q_dist_tile: {current_q_dist_tile.shape}')
-
             # loss
             td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
             huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
             # print(f'in update, td_error: {td_error.shape}')
             # print(f'in update, huber_loss: {huber_loss.shape}')
             
-            tau = tf.reshape(np.array(self.tau_hat), [1, self.quantile_num])
+            tau = tf.tile(tau, [1, 1, self.quantile_num])
             inv_tau = 1.0 - tau
             # print(f'in update, tau: {tau.shape}')
             # print(f'in update, inv_tau: {inv_tau.shape}')
 
-            tau_tile = tf.tile(tf.expand_dims(tau, axis=1), [1, self.quantile_num, 1])
-            inv_tau_tile = tf.tile(tf.expand_dims(inv_tau, axis=1), [1, self.quantile_num, 1])
-            # print(f'in update, tau_tile: {tau_tile.shape}')
-            # print(f'in update, inv_tau_tile: {inv_tau_tile.shape}')
-
-            critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau_tile, huber_loss), tf.multiply(tau_tile, huber_loss))
+            critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau, huber_loss), tf.multiply(tau, huber_loss))
             critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
             # print(f'in update, critic_losses: {critic_losses.shape}')
             # print(f'in update, critic_loss: {critic_loss.shape}')
-
-        # value check
-        # print(f'in update, target_q_dists: {target_q_dists}')
-        # ... omitted
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
 

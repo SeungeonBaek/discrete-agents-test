@@ -276,43 +276,43 @@ def agent_network_config(agent_config:Dict, extractor_switch: int, extractor_nam
             feature_dim = Graph_GCN_feature_dim
 
         elif extractor_switch == 7: # Custom
-            if extractor_name == 'SimpleMLP':
+            if extractor_name.lower() in ('simplemlp'):
                 extractor_config = Custom_simple_mlp_extractor_config
                 feature_dim = Custom_simple_mlp_feature_dim
-            elif extractor_name == 'SimpleInception':
+            elif extractor_name.lower() in ('simpleinception'):
                 extractor_config = Custom_simple_inception_extractor_config
                 feature_dim = Custom_simple_inception_feature_dim
-            elif extractor_name in ('Residual', 'Residual', 'residual'):
+            elif extractor_name.lower() in ('residual', 'res'):
                 extractor_config = Custom_res_extractor_config
                 feature_dim = Custom_res_feature_dim
-            elif extractor_name in ('AutoEncoder', 'autoencoder', 'AE', 'ae'):
+            elif extractor_name.lower() in ('autoencoder', 'ae', 'autoencoder1d', 'ae1d','autoencoder2d', 'ae2d'):
                 extractor_config = Custom_ae_extractor_config
                 feature_dim = Custom_ae_feature_dim
-            elif extractor_name in ('UNet', 'Unet', 'unet'):
+            elif extractor_name.lower() in ('unet'):
                 extractor_config = Custom_u_net_extractor_config
                 feature_dim = Custom_u_net_feature_dim
-            elif extractor_name == 'SimpleGRU':
+            elif extractor_name.lower() == ('simplegru'):
                 extractor_config = Custom_simple_gru_extractor_config
                 feature_dim = Custom_simple_gru_feature_dim
-            elif extractor_name in ('LSTM', 'Lstm', 'lstm'):
+            elif extractor_name.lower() in ('lstm'):
                 extractor_config = Custom_lstm_extractor_config
                 feature_dim = Custom_lstm_feature_dim
-            elif extractor_name in ('CNN1D', 'CNN1d', 'Cnn1D', 'Cnn1d', 'cnn1D', 'cnn1d'):
+            elif extractor_name.lower() in ('cnn1d'):
                 extractor_config = Custom_cnn1d_extractor_config
                 feature_dim = Custom_cnn1d_feature_dim
-            elif extractor_name in ('BiLSTM', 'biLSTM', 'bilstm'):
+            elif extractor_name.lower() in ('bilstm'):
                 extractor_config = Custom_bi_lstm_extractor_config
                 feature_dim = Custom_bi_lstm_feature_dim
-            elif extractor_name in ('Attention', 'attention'):
+            elif extractor_name.lower() in ('attention'):
                 extractor_config = Custom_attention_extractor_config
                 feature_dim = Custom_attention_feature_dim
-            elif extractor_name == 'TransductiveGNN':
+            elif extractor_name.lower() in ('transductivegnn'):
                 extractor_config = Custom_transductive_gnn_extractor_config
                 feature_dim = Custom_transductive_gnn_feature_dim
-            elif extractor_name == 'InductiveGNN':
+            elif extractor_name.lower() in ('inductivegnn'):
                 extractor_config = Custom_inductive_gnn_extractor_config
                 feature_dim = Custom_inductive_gnn_feature_dim
-            elif extractor_name in ('Transformer', 'transformer'):
+            elif extractor_name.lower() in ('transformer'):
                 extractor_config = Custom_transformer_extractor_config
                 feature_dim = Custom_transformer_feature_dim
             else:

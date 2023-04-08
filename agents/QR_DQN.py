@@ -58,8 +58,8 @@ class Agent:
         agent_config: agent configuration which is realted with RL algorithm => QR-DQN
             agent_config:
                 {
-                    name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
-                    buffer_size, use_PER, use_ERE, reward_normalize
+                    name, gamma, tau, quantile_num, epsilon, epsilon_decaying_rate, min_epsilon, update_freq, target_update_freq,
+                    buffer_size, warm_up, lr_critic, buffer_size, use_PER, use_ERE, reward_normalize
                     extension = {
                         'name', 'use_DDQN'
                     }
@@ -193,21 +193,21 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.icm_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray, is_test: bool)-> NDArray: # Todo: check!
+    def action(self, obs: NDArray, is_test: bool)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
         value_dist = self.critic_main(obs)
         # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
         if is_test == True:
-            mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+            mean_value = np.mean(value_dist.numpy(), axis=2)
             action = np.argmax(mean_value)
 
         else:
             random_val = np.random.rand()
             if self.update_step > self.warm_up:
                 if random_val > self.epsilon:
-                    mean_value = np.mean(value_dist.numpy(), axis=2) # Todo: CVaR Implementation
+                    mean_value = np.mean(value_dist.numpy(), axis=2)
                     action = np.argmax(mean_value)
                 else:
                     action = np.random.randint(self.act_space)
