@@ -526,7 +526,7 @@ class Agent:
                 elif self.extension_name == 'NGU':
                     pass
                 else:
-                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon                
+                    return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
         else:
             if self.extension_name == 'ICM':
                 return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
