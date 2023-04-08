@@ -2,6 +2,7 @@
 __pycache__
 Safe_QR_DQN.py
 Safe_MMDQN.py
+MMDQN.py
 
 # directory
 10-gSDE/

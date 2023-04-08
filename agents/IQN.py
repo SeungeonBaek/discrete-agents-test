@@ -9,7 +9,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
-from tensorflow.keras.layers import Dense, ReLU
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LayerNormalization
 
 from utils.replay_buffer import ExperienceMemory
@@ -224,11 +224,9 @@ class Agent:
         elif self.extension_name == 'NGU':
             self.ngu_lr = self.extension_config['ngu_lr']
 
-    def action(self, obs: NDArray, is_test: bool)-> NDArray: # Todo: check!
+    def action(self, obs: NDArray, is_test: bool)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
-        # print(f'in action, obs: {np.shape(np.array(obs))}')
         value_dist, _ = self.critic_main(obs)
-        # print(f'in action, value_dist: {np.shape(np.array(value_dist))}')
 
         if is_test == True:
             mean_value = np.mean(value_dist.numpy(), axis=2)
@@ -338,7 +336,7 @@ class Agent:
         # print(f'in update, rewards: {rewards.shape}')
 
         critic_variable = self.critic_main.trainable_variables
-        with tf.GradientTape() as tape_critic:  # Todo backpropagation related code
+        with tf.GradientTape() as tape_critic:
             tape_critic.watch(critic_variable)
 
             # current

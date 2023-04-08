@@ -17,7 +17,7 @@ AttentionExtractor (..working)
 GraphExtractor (..working)  
 CustomExtractor (two example finished)  
 
-# RL Algorithms
+# Single Agent RL Algorithms
 ## DQN family
 DQN  
 DDQN  
@@ -28,7 +28,7 @@ REDQ (...working)
 C51 (...working)  
 QR_DQN  
 QUOTA (...working)  
-IQN (...working)  
+IQN  
 FQF (...working)  
 MMDQN (...working)  
 C2D (...working)  
@@ -48,6 +48,10 @@ MEPPO (...working)
 TQC(for SAC) (...working)  
 
 ------------
+# Multi Agent RL Algorithms
+Todo
+
+------------
 # Maintainers
-discrete-agents-test is currently maintained by SeungeonBaek, Jeongmin Do, Jaeun Ryu  
+discrete-agents-test is currently maintained by SeungeonBaek  
 Important Note: We do not do technical support, nor consulting and don't answer personal questions per email.  
