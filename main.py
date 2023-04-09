@@ -308,11 +308,10 @@ if __name__ == '__main__':
     6: Graph, name = {#Todo: Writing the name of Extractors},
     7: Custom, name = {'SimpleMLP', 'SimpleInception', 'Residual', 'AE', 'UNet', 'SimpleGRU', 'LSTM', 'CNN1D', \
                        'BiLSTM', 'Attention', 'TransductiveGNN', 'InductiveGNN', 'Transformer'}
-
     """
 
     env_switch = 1
-    agent_switch = 7
+    agent_switch = 9
     aux_switch = 1
     extractor_switch = 1
     extractor_name = 'AutoEncoder1D'

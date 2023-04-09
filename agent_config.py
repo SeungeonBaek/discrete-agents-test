@@ -86,21 +86,22 @@ FQF_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_
 
 
 # MMDQN
-MMDQN_Vanilla_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 20, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+MMDQN_Vanilla_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
                               'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 MMDQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':False}
 
-MMDQN_ICM_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 20, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+MMDQN_ICM_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
                               'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 MMDQN_ICM_agent_config['extension'] = {'name': 'ICM', 'use_DDQN':True, 'icm_update_freq': 2, 'icm_lr': 0.001, 'icm_feature_dim': 128}
 
-MMDQN_RND_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 20, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+MMDQN_RND_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
                               'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 MMDQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':False, 'rnd_update_freq': 5, 'rnd_lr': 0.0005}
 
-MMDQN_NGU_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 20, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+MMDQN_NGU_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
                               'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 MMDQN_NGU_agent_config['extension'] = {'name': 'NGU', 'use_DDQN':True, 'ngu_lr': 0.0005}
+
 
 # C2D
 C2D_Vanilla_agent_config = {'agent_name': 'C2D', 'gamma' : 0.99, 'update_freq': 3, 'batch_size': 128, 'warm_up': 1024, 
@@ -143,12 +144,22 @@ Safe_QR_DQN_RND_agent_config = {'agent_name': 'Safe_QR_DQN', 'gamma' : 0.99, 'ta
 Safe_QR_DQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':True, 'rnd_update_freq': 5, 'rnd_lr': 0.0005, 'safe_option': 8}
 
 
-# Safe_MMDQN
-Safe_MMDQN_Vanilla_agent_config = {'agent_name': 'Safe_MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'quantile_num': 51, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,
+# Safe_IQN
+Safe_IQN_Vanilla_agent_config = {'agent_name': 'Safe_IQN', 'gamma' : 0.99, 'tau': 0.005, 'quantile_dim': 128, 'quantile_num': 51, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
-Safe_MMDQN_Vanilla_agent_config['extension'] = {'name': 'Safe_Vanilla', 'use_DDQN':False, 'safe_option': 1}
+Safe_IQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':False, 'safe_option': 8}
 
-Safe_MMDQN_RND_agent_config = {'agent_name': 'Safe_MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'quantile_num': 51, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99999, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,
+Safe_IQN_RND_agent_config = {'agent_name': 'Safe_IQN', 'gamma' : 0.99, 'tau': 0.005, 'quantile_dim': 128, 'quantile_num': 51, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.99999, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,
                         'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
-Safe_MMDQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':False, 'rnd_update_freq': 5, 'rnd_lr': 0.0005, 'safe_option': 1}
+Safe_IQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':False, 'rnd_update_freq': 5, 'rnd_lr': 0.0005, 'safe_option': 8}
+
+
+# Safe_MMDQN
+Safe_MMDQN_Vanilla_agent_config = {'agent_name': 'Safe_MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+                              'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
+Safe_MMDQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':False, 'safe_option': 8}
+
+Safe_MMDQN_RND_agent_config = {'agent_name': 'Safe_MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+                              'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
+Safe_MMDQN_RND_agent_config['extension'] = {'name': 'RND', 'use_DDQN':False, 'rnd_update_freq': 5, 'rnd_lr': 0.0005, 'safe_option': 8}
 

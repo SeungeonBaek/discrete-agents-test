@@ -1,8 +1,10 @@
 # files
 __pycache__
-Safe_QR_DQN.py
-Safe_MMDQN.py
 MMDQN.py
+
+Safe_QR_DQN.py
+Safe_IQN.py
+Safe_MMDQN.py
 
 # directory
 10-gSDE/

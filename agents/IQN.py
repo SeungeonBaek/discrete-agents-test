@@ -46,7 +46,7 @@ class DistCritic(Model): # Distributional Q network
         # phi
         self.pis = tf.constant(tf.constant(np.pi, dtype=tf.float32) * tf.cast(tf.range(1, self.quantile_dim + 1, 1), dtype=tf.float32))
         self.phi = Dense(self.quantile_dim, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.phi_ln = LayerNormalization(axis=-1) # Todo
+        self.phi_ln = LayerNormalization(axis=-1)
 
         # value
         self.ff = Dense(128, activation = 'relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
@@ -70,7 +70,8 @@ class DistCritic(Model): # Distributional Q network
 
         cos_tau = tf.cos(tf.multiply(self.pis, tau_tile))
         phi = self.phi(cos_tau)
-        psi_phi = tf.multiply(psi, phi)
+        phi_ln = self.phi_ln(phi)
+        psi_phi = tf.multiply(psi, phi_ln)
 
         # value
         ff = self.ff(tf.reshape(psi_phi, (-1, self.quantile_dim)))
