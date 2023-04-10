@@ -331,11 +331,6 @@ class Agent:
             actions = tf.squeeze(tf.convert_to_tensor(actions, dtype = tf.float32))
             dones = tf.convert_to_tensor(dones, dtype = tf.bool)
 
-        # print(f'in update, states: {states.shape}')
-        # print(f'in update, next_states: {next_states.shape}')
-        # print(f'in update, actions: {actions.shape}')
-        # print(f'in update, rewards: {rewards.shape}')
-
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
             tape_critic.watch(critic_variable)
@@ -345,40 +340,25 @@ class Agent:
             current_indices = tf.stop_gradient(tf.stack([range(self.batch_size), tf.cast(actions, tf.int32)], axis=1))
             current_q_dist = tf.gather_nd(params=current_q_dists, indices=current_indices)
             current_q_dist_tile = tf.tile(tf.expand_dims(current_q_dist, axis=2), [1, 1, self.quantile_num])
-            # print(f'in update, current_q_dists: {current_q_dists.shape}')
-            # print(f'in update, current_indices: {current_indices.shape}')
-            # print(f'in update, current_q_dist: {current_q_dist.shape}')
-            # print(f'in update, current_q_dist_tile: {current_q_dist_tile.shape}')
 
             # target
             target_q_dists, _ = self.critic_target(next_states, tau)
             target_indices = tf.stack([range(self.batch_size), tf.argmax(tf.reduce_mean(target_q_dists, axis=2), axis=1)], axis=1)
             target_q_dist_next = tf.gather_nd(params=target_q_dists, indices=target_indices)
-            # print(f'in update, target_q_dists: {target_q_dists.shape}')
-            # print(f'in update, target_indices: {target_indices.shape}')
-            # print(f'in update, target_q_dist_next: {target_q_dist_next.shape}')
 
             target_q_dist = tf.expand_dims(rewards, axis=1) + self.gamma * target_q_dist_next * tf.expand_dims((1.0 - tf.cast(dones, dtype=tf.float32)), axis=1)
             target_q_dist = tf.stop_gradient(target_q_dist)
             target_q_dist_tile = tf.tile(tf.expand_dims(target_q_dist, axis=1), [1, self.quantile_num, 1])
-            # print(f'in update, target_q_dist: {target_q_dist.shape}')
-            # print(f'in update, target_q_dist_tile: {target_q_dist_tile.shape}')
 
             # loss
             td_error = tf.subtract(target_q_dist_tile, current_q_dist_tile)
             huber_loss = tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)
-            # print(f'in update, td_error: {td_error.shape}')
-            # print(f'in update, huber_loss: {huber_loss.shape}')
             
             tau = tf.tile(tau, [1, 1, self.quantile_num])
             inv_tau = 1.0 - tau
-            # print(f'in update, tau: {tau.shape}')
-            # print(f'in update, inv_tau: {inv_tau.shape}')
 
             critic_losses = tf.where(tf.less(td_error, 0.0), tf.multiply(inv_tau, huber_loss), tf.multiply(tau, huber_loss))
             critic_loss = tf.reduce_mean(tf.reduce_sum(tf.reduce_mean(critic_losses, axis=2), axis=1))
-            # print(f'in update, critic_losses: {critic_losses.shape}')
-            # print(f'in update, critic_loss: {critic_loss.shape}')
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
 

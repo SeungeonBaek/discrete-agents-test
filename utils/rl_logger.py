@@ -84,16 +84,6 @@ class RLLogger():
         elif self.agent_config['extension']['name'] == 'QUOTA':
             updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
-        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
-            if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-
         elif self.agent_config['agent_name'] == 'Agent57':
             updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
@@ -158,13 +148,6 @@ class RLLogger():
                     pass
 
         elif self.agent_config['agent_name'] == 'QUOTA':
-            if updated:
-                self.summary_writer.add_scalar('02_Loss/Critic_1_loss', critic_loss, Agent.update_step)
-                self.summary_writer.add_scalar('02_Loss/Actor_loss', actor_loss, Agent.update_step)
-                self.summary_writer.add_scalar('03_Critic/Target_Q_mean', trgt_q_mean, Agent.update_step)
-                self.summary_writer.add_scalar('03_Critic/Critic_value', critic_value, Agent.update_step)
-
-        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if updated:
                 self.summary_writer.add_scalar('02_Loss/Critic_1_loss', critic_loss, Agent.update_step)
                 self.summary_writer.add_scalar('02_Loss/Actor_loss', actor_loss, Agent.update_step)
@@ -243,16 +226,6 @@ class RLLogger():
         elif self.agent_config['extension']['name'] == 'QUOTA':
             updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
-        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
-            if self.agent_config['extension']['name'] == 'ICM':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            elif self.agent_config['extension']['name'] == 'RND':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            elif self.agent_config['extension']['name'] == 'NGU':
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-            else:
-                updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
-
         elif self.agent_config['agent_name'] == 'Agent57':
             updated, critic_loss, trgt_q_mean, critic_value= Agent.update(inference_mode)
 
@@ -328,14 +301,6 @@ class RLLogger():
                     pass
 
         elif self.agent_config['agent_name'] == 'QUOTA':
-            if updated:
-                self.wandb_session.log({
-                    "02_Loss/Critic_1_loss": critic_loss,
-                    '03_Critic/Target_Q_mean': trgt_q_mean, 
-                    '03_Critic/Critic_value': critic_value
-                }, step=Agent.update_step)
-
-        elif self.agent_config['agent_name'] == 'RAINBOW_DQN':
             if updated:
                 self.wandb_session.log({
                     "02_Loss/Critic_1_loss": critic_loss,
