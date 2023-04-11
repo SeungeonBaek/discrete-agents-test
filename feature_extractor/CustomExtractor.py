@@ -10,7 +10,7 @@ from tensorflow.keras import Model
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import GRU
+from tensorflow.keras.layers import GRU, LSTM
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
