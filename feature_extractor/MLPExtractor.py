@@ -75,7 +75,7 @@ class FlattenExtractor(Model):
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
-        dim of state: (batch_size, states)
+        dim of state: (batch_size, features)
         '''
         flatten = self.flatten(state)
         feature = self.feature(flatten)
@@ -167,7 +167,7 @@ class MLPExtractor(Model):
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
-        dim of state: (batch_size, states)
+        dim of state: (batch_size, features)
         '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
@@ -279,7 +279,7 @@ class AutoEncoder1DExtractor(Model): # Todo
 
     def call(self, state: Union[NDArray, tf.Tensor])-> Tuple[tf.Tensor]:
         '''
-        dim of state: (batch_size, states)
+        dim of state: (batch_size, features)
         '''
         # Contraction
         for idx, net in enumerate(self.contract_net_list):
@@ -388,7 +388,7 @@ class Inception1DExtractor(Model):
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
-        dim of state: (batch_size, states)
+        dim of state: (batch_size, features)
         '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
@@ -518,7 +518,7 @@ class UNet1DExtractor(Model):
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
         '''
-        dim of state: (batch_size, states)
+        dim of state: (batch_size, features)
         '''
         jump = []
         # Contraction

@@ -47,8 +47,10 @@ REC_GRU_extractor_config = {'type': 'Recurrent', 'name': 'GRU', 'initializer': '
 REC_GRU_feature_dim = 128
 
 ## For CNN1D extractor
+# net_architecture: [[channel_size, kernel_size, stride, padding type], 'pooling type'] 
 REC_CNN1d_extractor_config = {'type': 'Recurrent', 'name': 'CNN1D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
-                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+                        'network_architecture': [[64, 2, 1, 'same'], 'average', [64, 2, 1, 'same'], 'average'],
+                        'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 REC_CNN1d_feature_dim = 128
 
 ###############################################################
@@ -57,12 +59,15 @@ REC_CNN1d_feature_dim = 128
 
 ## For CNN2D extractor
 Convolutional_CNN2d_extractor_config = {'type': 'Convolutional', 'name': 'CNN2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
-                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+                        'network_architecture': [[32, 3, 1, 'valid'], 'max', [64, 3, 1, 'valid'], 'max'],
+                        'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_CNN2d_feature_dim = 128
 
 ## For AutoEncoder2D extractor
-Convolutional_AE2d_extractor_config = {'type': 'Convolutional', 'name': 'AutoEncoder2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
-                        'network_architecture': [256, 256], 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
+Convolutional_AE2d_extractor_config = {'type': 'Convolutional', 'name': 'AE2D', 'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005,
+                        'network_architecture': [['encoder', 64, 2, 1, 'valid'], 'max', ['encoder', 64, 2, 1, 'valid'], 'max',\
+                                                 ['decoder', 64, 2, 1, 'valid'], 'max', ['decoder', 64, 2, 1, 'valid'], 'max'],
+                        'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}
 Convolutional_AE2d_feature_dim = 128
 
 ## For Inception2d extractor

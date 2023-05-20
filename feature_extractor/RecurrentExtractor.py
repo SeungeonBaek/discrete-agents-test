@@ -13,11 +13,12 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import SimpleRNN as RNN
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import GRU
-from tensorflow.keras.layers import Conv1D, Conv1DTranspose
+from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import MaxPooling1D, AvgPool1D
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
 # from tensorflow.keras.layers import GroupNormalization
+from tensorflow.keras.layers import ReLU, LeakyReLU
 
 import sys, os
 if __name__ == "__main__":
@@ -121,6 +122,9 @@ class RNNExtractor(Model):
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, features)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
@@ -229,6 +233,9 @@ class LSTMExtractor(Model):
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, features)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
@@ -337,6 +344,9 @@ class GRUExtractor(Model):
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, features)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
@@ -348,7 +358,7 @@ class GRUExtractor(Model):
         return feature
 
 
-class CNN1DExtractor(Model): # Todo
+class CNN1DExtractor(Model):
     def __init__(self, extractor_config: Dict, feature_dim: int)-> None:
         super(CNN1DExtractor,self).__init__()
 
@@ -376,20 +386,57 @@ class CNN1DExtractor(Model): # Todo
             self.regularizer = None
 
         # Loading the network architecture
-        # Todo
+        # [[Conv layer attributes], (norm + activation), [Conv layer attributes], (norm + activation), 'pooling_type']
+        # [[Conv layer attributes], (norm + activation), 'pooling_type', [Conv layer attributes], (norm + activation), 'pooling_type']
+        self.net_arc = self.config.get('network_architecture', [])
+        self.net_list = []
 
         # Define the network architecture
-        # Todo
+        for idx, layer_attribute in enumerate(self.net_arc):
+            if isinstance(layer_attribute, list): # Conv layer
+                # Conv layer
+                channel_size, kernel_size, strides, padding = layer_attribute
+                self.net_list.append(Conv1D(channel_size, kernel_size, strides, padding, activation=None, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer))
+
+                # normalization
+                if self.config.get('norm_type', None) == "layer_norm":
+                    self.net_list.append(LayerNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "batch_norm":
+                    self.net_list.append(BatchNormalization(axis=-1))
+                elif self.config.get('norm_type', None) == "group_norm":
+                    raise ValueError("In this version (tf 2.7), group_norm layer is not supported")
+                else:
+                    raise ValueError("If you don't use the normalization, you might use 'use_norm == False' in extractor config. Or please check the norm_type in ['layer norm', 'batch_norm']")
+                
+                # activation
+                if self.config.get('act_fn', 'relu') == 'relu':
+                    self.net_list.append(ReLU())
+                elif self.config.get('act_fn', 'relu') == 'lrelu':
+                    self.net_list.append(LeakyReLU())
+                else:
+                    raise ValueError("Please use relu or leaky relu")
+
+            elif isinstance(layer_attribute, str): # pooling type
+                if layer_attribute == 'average':
+                    self.net_list.append(AvgPool1D())
+                elif layer_attribute == 'max':
+                    self.net_list.append(MaxPooling1D())
+                else:
+                    raise ValueError("Please use average pooling or max pooling")
 
         self.feature = Dense(feature_dim, activation = self.config.get('act_fn', 'relu'))
 
     def call(self, state: Union[NDArray, tf.Tensor])-> tf.Tensor:
+        '''
+        dim of state: (batch_size, time_window, features)
+        '''
         for idx, net in enumerate(self.net_list):
             if idx == 0:
                 hidden = net(state)
             else:
                 hidden = net(hidden)
 
+        hidden = tf.reshape(hidden, (state.shape[0], -1))
         feature = self.feature(hidden)
 
         return feature
@@ -432,16 +479,16 @@ if __name__ == "__main__":
     3: GRU Extractor, 4: CNN1D Extractor
     """
 
-    test_switch = 1
+    test_switch = 4
 
     # Test any extractor
     if test_switch == 1:
         test_RecurExtractor(REC_RNN_extractor_config, REC_RNN_feature_dim)
     elif test_switch == 2:
         test_RecurExtractor(REC_LSTM_extractor_config, REC_LSTM_feature_dim)
-    elif test_switch == 2:
-        test_RecurExtractor(REC_GRU_extractor_config, REC_GRU_feature_dim)
     elif test_switch == 3:
-        test_RecurExtractor(REC_CNN1d_extractor_config, REC_CNN1d_feature_dim) # Todo
+        test_RecurExtractor(REC_GRU_extractor_config, REC_GRU_feature_dim)
+    elif test_switch == 4:
+        test_RecurExtractor(REC_CNN1d_extractor_config, REC_CNN1d_feature_dim)
     else:
         raise ValueError("Please correct the test switch in [1, 2, 3, 4]")

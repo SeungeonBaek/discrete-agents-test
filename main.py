@@ -313,8 +313,8 @@ if __name__ == '__main__':
     env_switch = 1
     agent_switch = 1
     aux_switch = 1
-    extractor_switch = 7
-    extractor_name = 'AE'
+    extractor_switch = 4
+    extractor_name = 'CNN1D'
 
     fcn_config={'initializer': 'glorot_normal', 'regularizer': 'l2', 'l2': 0.0005, 'network_architecture': [256],\
                 'use_norm': True, 'norm_type': 'layer_norm', 'act_fn': 'relu'}

@@ -192,7 +192,7 @@ class Agent:
         save_xp: save transition(s, a, r, s', d) in experience memory
         load_models: load weights
         save_models: save weights
-    []
+
     """
     def __init__(self,
                  agent_config: Dict,
