@@ -19,7 +19,7 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
     # Agent algorithm - Auxiliary algorithm
     ## DQN
     if agent_switch == 0:
-        agent_config = BLANK_DQN_Vanilla_agent_config
+        agent_config = Blank_DQN_Vanilla_agent_config
 
     elif agent_switch == 1:
         if ext_switch == 1:
