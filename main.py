@@ -13,8 +13,8 @@ from utils.rl_logger import RLLogger
 from utils.rl_loader import RLLoader
 from utils.state_logger import StateLogger
 
-
 MAX_SCORE = 0
+
 
 def main(env_config: Dict,
          agent_config: Dict,
