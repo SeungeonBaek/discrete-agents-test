@@ -3,7 +3,6 @@ from numpy.typing import NDArray
 
 import tensorflow as tf
 import numpy as np
-import tensorflow_probability as tfp
 
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
@@ -14,10 +13,6 @@ from tensorflow.keras.layers import LayerNormalization
 
 from utils.replay_buffer import ExperienceMemory
 from utils.prioritized_memory_numpy import PrioritizedMemory
-
-from agents.ICM_model import ICM_model
-from agents.RND_model import RND_target, RND_predict
-# need NGU
 
 from feature_extractor import *
 
@@ -48,13 +43,13 @@ class Critic(Model): # Q network
 class Agent:
     """
     Argument:
-        agent_config: agent configuration which is realted with RL algorithm => DQN
+        agent_config: agent configuration which is realted with RL algorithm => Blank_DQN
             agent_config:
                 {
                     name, gamma, tau, update_freq, batch_size, warm_up, lr_actor, lr_critic,
                     buffer_size, use_PER, use_ERE, reward_normalize
                     extension = {
-                        'name', 'use_DDQN'
+                        'name', 'use_DDQN', 'use_Dueling'
                     }
                 }
         obs_space: shpae of observation
@@ -87,25 +82,6 @@ class Agent:
         # extension properties
         extension_config: configuration of extention algorithm
         extension_name: name of extention algorithm
-            
-            # icm - intrinsic curiosity model
-            icm_update_freq: update freqency per step for icm model update
-            icm_lr: learning rate of icm
-            icm_feqture_dim: feature dimension of icm
-
-            icm: icm network
-            icm_opt: optimizer of icm network
-
-            # rnd: random network distillation
-            rnd_update_freq: update freqency per step for rnd model update
-            rnd_lr: learning rate of rnd
-            
-            rnd_target: target network of rnd
-            rnd_predict: predict network of rnd
-            rnd_opt: optimizer for predict network of rnd
-
-            # ngu: never give up!
-            Todo: Implementation
 
     Methods:
         action: return the action which is mapped with obs in policy
@@ -115,7 +91,6 @@ class Agent:
         save_xp: save transition(s, a, r, s', d) in experience memory
         load_models: load weights
         save_models: save weights
-
     """
     def __init__(self,
                  agent_config: Dict,
@@ -160,25 +135,6 @@ class Agent:
         self.extension_config = self.agent_config['extension']
         self.extension_name = self.extension_config['name']
 
-        if self.extension_name == 'ICM':
-            self.icm_update_freq = self.extension_config['icm_update_freq']
-
-            self.icm_lr = self.extension_config['icm_lr']
-            self.icm_feature_dim = self.extension_config['icm_feature_dim']
-            self.icm = ICM_model(self.obs_space, self.act_space, self.icm_feature_dim)
-            self.icm_opt = Adam(self.icm_lr)
-
-        elif self.extension_name == 'RND':
-            self.rnd_update_freq = self.extension_config['rnd_update_freq']
-
-            self.rnd_lr = self.extension_config['rnd_lr']
-            self.rnd_target = RND_target(self.obs_space, self.act_space)
-            self.rnd_predict = RND_predict(self.obs_space, self.act_space)
-            self.rnd_opt = Adam(self.rnd_lr)
-
-        elif self.extension_name == 'NGU':
-            self.icm_lr = self.extension_config['ngu_lr']
-
     def action(self, obs: NDArray, is_test: bool)-> NDArray:
         obs = tf.convert_to_tensor([obs], dtype=tf.float32)
         # print(f'in action, obs: {np.shape(np.array(obs))}')
@@ -208,27 +164,6 @@ class Agent:
 
     def get_intrinsic_reward(self, state: NDArray, next_state: NDArray, action: NDArray)-> float:
         reward_int = 0
-        if self.extension_name == 'ICM':
-            state = tf.convert_to_tensor([state], dtype=tf.float32)
-            next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
-            action = tf.convert_to_tensor([action], dtype=tf.float32)
-            
-            feature_next_s, pred_feature_next_s, _ = self.icm((state, next_state, action))
-
-            reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s))), 0, 5)
-            reward_int = reward_int.numpy()
-        
-        elif self.extension_name == 'RND':
-            next_state = tf.convert_to_tensor([next_state], dtype=tf.float32)
-            
-            target_value = self.rnd_target(next_state)
-            predict_value = self.rnd_predict(next_state)
-
-            reward_int = tf.clip_by_value(tf.reduce_mean(tf.math.square(tf.subtract(predict_value, target_value))), 0, 5)
-            reward_int = reward_int.numpy()
-
-        elif self.extension_name == 'NGU':
-            pass
 
         return reward_int
 
@@ -248,14 +183,7 @@ class Agent:
         self.update_call_step += 1
 
         if inference_mode == True or (self.replay_buffer._len() < self.batch_size) or (self.update_call_step % self.update_freq != 0):
-            if self.extension_name == 'ICM':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'RND':
-                return False, 0.0, 0.0, 0.0, 0.0, 0.0
-            elif self.extension_name == 'NGU':
-                return False, 0.0, 0.0, 0.0, 0.0
-            else:
-                return False, 0.0, 0.0, 0.0, 0.0
+            return False, 0.0, 0.0, 0.0, 0.0
 
         updated = True
         self.update_step += 1
@@ -290,105 +218,137 @@ class Agent:
         critic_variable = self.critic_main.trainable_variables
         with tf.GradientTape() as tape_critic:
             tape_critic.watch(critic_variable)
-            """ Here """
 
+            if not self.agent_config['example']:
+                """ Free to implement """
+                pass
+                # next_Q = target_Q_network(next_states) / shape : [batch_size, action_space]
+                # next_Q = max(target_Q_network(next_states)) / shape : [batch_size, 1]
+                # next_Q = reward + gamma * next_Q * (1- done) / shape : [batch_size, 1]
 
-            """ DQN """
-            current_q_next = self.critic_main(next_states)
-            next_action = tf.argmax(current_q_next, axis=1)
-            indices = tf.stack([range(self.batch_size), next_action], axis=1)
+                # current_Q = main_Q_network(next_states) / shape : [batch_size, action_space]
+                # current_Q = current_Q[action] / shape : [batch_size, 1]
 
-            target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
+                # td_error = next_Q-current_Q / shape : [batch_size, 1]
 
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            target_q = tf.stop_gradient(target_q)
+                # critic_loss = td_error^2 / shape : [batch_size, 1]
+                # critic_loss = Q(next_states) / shape : [batch_size, ]
+                
+            else:
+                if not (self.agent_config['use_Huber'] and self.agent_config['use_PER'] and self.extension_config['use_DDQN'] and self.extension_config['use_Dueling']):
+                    """ DQN """
+                    target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
 
-            current_q = self.critic_main(states)
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+                    target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+                    target_q = tf.stop_gradient(target_q)
 
-            td_error = tf.subtract(current_q, target_q)
+                    current_q = self.critic_main(states)
+                    action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
+                    current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
 
-            critic_losses = tf.math.square(td_error)
-            
-            critic_loss = tf.math.reduce_mean(critic_losses)
+                    td_error = tf.subtract(current_q, target_q)
 
-            """ Huber DQN """
-            current_q_next = self.critic_main(next_states)
-            next_action = tf.argmax(current_q_next, axis=1)
-            indices = tf.stack([range(self.batch_size), next_action], axis=1)
+                    critic_losses = tf.math.square(td_error)
+                    
+                    critic_loss = tf.math.reduce_mean(critic_losses)
 
-            target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
+                elif not (self.agent_config['use_PER'] and self.extension_config['use_DDQN'] and self.extension_config['use_Dueling']):
+                    """ Huber DQN """
+                    target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
 
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            target_q = tf.stop_gradient(target_q)
+                    target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+                    target_q = tf.stop_gradient(target_q)
 
-            current_q = self.critic_main(states)
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+                    current_q = self.critic_main(states)
+                    action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
+                    current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
 
-            td_error = tf.subtract(current_q, target_q)
+                    td_error = tf.subtract(current_q, target_q)
 
-            critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
-                                    lambda: tf.math.square(td_error))
-            
-            critic_loss = tf.math.reduce_mean(critic_losses)
+                    critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                            lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
+                                            lambda: tf.math.square(td_error))
+                    
+                    critic_loss = tf.math.reduce_mean(critic_losses)
 
-            """ PER Huber DQN """
-            current_q_next = self.critic_main(next_states)
-            next_action = tf.argmax(current_q_next, axis=1)
-            indices = tf.stack([range(self.batch_size), next_action], axis=1)
+                elif not (self.agent_config['use_Huber'] and self.extension_config['use_DDQN'] and self.extension_config['use_Dueling']):
+                    """ PER DQN """
+                    target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
 
-            target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
+                    target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+                    target_q = tf.stop_gradient(target_q)
 
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            target_q = tf.stop_gradient(target_q)
+                    current_q = self.critic_main(states)
+                    action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
+                    current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
 
-            current_q = self.critic_main(states)
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+                    td_error = tf.subtract(current_q, target_q)
 
-            td_error = tf.subtract(current_q, target_q)
+                    critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
+                                            lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
+                                            lambda: tf.math.square(td_error))
+                    
+                    critic_loss = tf.math.reduce_mean(critic_losses)
 
-            critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
-                                    lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
-                                    lambda: tf.math.square(td_error)))
-            
-            critic_loss = tf.math.reduce_mean(critic_losses)
+                elif not (self.extension_config['use_DDQN'] and self.extension_config['use_Dueling']):
+                    """ PER Huber DQN """
+                    target_q_next = tf.reduce_max(self.critic_target(next_states), axis=1)
 
-            """ PER Huber DDQN """
-            current_q_next = self.critic_main(next_states)
-            next_action = tf.argmax(current_q_next, axis=1)
-            indices = tf.stack([range(self.batch_size), next_action], axis=1)
-            
-            target_q_next = tf.cond(tf.convert_to_tensor(self.extension_config['use_DDQN'], dtype=tf.bool),\
-                    lambda: tf.gather_nd(params=self.critic_target(next_states), indices=indices), \
-                    lambda: tf.reduce_max(self.critic_target(next_states), axis=1))
+                    target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+                    target_q = tf.stop_gradient(target_q)
 
-            target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
-            target_q = tf.stop_gradient(target_q)
+                    current_q = self.critic_main(states)
+                    action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
+                    current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
 
-            current_q = self.critic_main(states)
-            action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
-            current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+                    td_error = tf.subtract(current_q, target_q)
 
-            td_error = tf.subtract(current_q, target_q)
+                    critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
+                                        lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                            lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
+                                            lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
+                                        lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                            lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
+                                            lambda: tf.math.square(td_error)))
+                    
+                    critic_loss = tf.math.reduce_mean(critic_losses)
 
-            critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
-                                    lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
-                                lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
-                                    lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
-                                    lambda: tf.math.square(td_error)))
-            
-            critic_loss = tf.math.reduce_mean(critic_losses)
+                elif not self.extension_config['use_Dueling']:
+                    """ PER Huber DDQN """
+                    current_q_next = self.critic_main(next_states)
+                    next_action = tf.argmax(current_q_next, axis=1)
+                    indices = tf.stack([range(self.batch_size), next_action], axis=1)
+                    
+                    target_q_next = tf.cond(tf.convert_to_tensor(self.extension_config['use_DDQN'], dtype=tf.bool),\
+                            lambda: tf.gather_nd(params=self.critic_target(next_states), indices=indices), \
+                            lambda: tf.reduce_max(self.critic_target(next_states), axis=1))
 
+                    target_q = rewards + self.gamma * target_q_next * (1.0 - tf.cast(dones, dtype=tf.float32))
+                    target_q = tf.stop_gradient(target_q)
+
+                    current_q = self.critic_main(states)
+                    action_one_hot = tf.one_hot(tf.cast(actions, tf.int32), self.act_space)
+                    current_q = tf.reduce_sum(tf.multiply(current_q, action_one_hot), axis=1)
+
+                    td_error = tf.subtract(current_q, target_q)
+
+                    critic_losses = tf.cond(tf.convert_to_tensor(self.agent_config['use_PER'], dtype=tf.bool), \
+                                        lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                            lambda: tf.multiply(is_weight, tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2)), \
+                                            lambda: tf.multiply(is_weight, tf.math.square(td_error))), \
+                                        lambda: tf.cond(tf.convert_to_tensor(self.agent_config['use_Huber'], dtype=tf.bool), \
+                                            lambda: tf.where(tf.less(tf.math.abs(td_error), 1.0), 1/2 * tf.math.square(td_error), 1.0 * tf.abs(td_error) - 1.0 * 1/2), \
+                                            lambda: tf.math.square(td_error)))
+                    
+                    critic_loss = tf.math.reduce_mean(critic_losses)
+
+                elif not self.extension_config['use_DDQN']:
+                    """ PER Huber Dueling DQN """
+                    pass
+
+                else:
+                    """ PER Huber DDDQN (Dueling Double DQN) """
+                    pass
 
         grads_critic, _ = tf.clip_by_global_norm(tape_critic.gradient(critic_loss, critic_variable), 0.5)
 
@@ -401,63 +361,13 @@ class Agent:
         if self.update_step % self.target_update_freq == 0:
             self.update_target()
 
-        icm_pred_next_s_loss_val, icm_pred_a_loss = 0, 0
-        rnd_pred_loss_val = 0
-        
-        # extensions
-        if self.extension_name == 'ICM':
-            if self.update_step % self.icm_update_freq == 0:
-                icm_variable = self.icm.trainable_variables
-                with tf.GradientTape() as tape_icm:
-                    tape_icm.watch(icm_variable)
-
-                    feature_next_s, pred_feature_next_s, pred_a = self.icm((states, next_states, actions))
-
-                    icm_pred_next_s_loss = tf.reduce_mean(tf.math.square(tf.subtract(feature_next_s, pred_feature_next_s)))
-                    icm_pred_a_loss = tf.reduce_mean(tf.math.square(tf.subtract(actions, pred_a)))
-
-                    icm_pred_loss = tf.add(icm_pred_next_s_loss, icm_pred_a_loss)
-
-                grads_icm, _ = tf.clip_by_global_norm(tape_icm.gradient(icm_pred_loss, icm_variable), 0.5)
-                self.icm_opt.apply_gradients(zip(grads_icm, icm_variable))            
-
-                icm_pred_next_s_loss_val = icm_pred_next_s_loss.numpy()
-                icm_pred_a_loss_val = icm_pred_a_loss.numpy()
-
-        elif self.extension_name == 'RND':
-            if self.update_step % self.rnd_update_freq == 0:
-                rnd_variable = self.rnd_predict.trainable_variables
-                with tf.GradientTape() as tape_rnd:
-                    tape_rnd.watch(rnd_variable)
-            
-                    predictions = self.rnd_predict(next_states)
-                    targets = self.rnd_target(next_states)
-
-                    rnd_pred_loss = tf.reduce_mean(tf.math.square(tf.subtract(predictions, targets)))
-
-                grads_rnd, _ = tf.clip_by_global_norm(tape_rnd.gradient(rnd_pred_loss, rnd_variable), 0.5)
-                self.rnd_opt.apply_gradients(zip(grads_rnd, rnd_variable))
-
-                rnd_pred_loss_val = rnd_pred_loss.numpy()
-
-
-        elif self.extension_name == 'NGU':
-            pass
-
         # PER update
         td_error_numpy = np.abs(td_error.numpy())
         if self.agent_config['use_PER']:
             for i in range(self.batch_size):
                 self.replay_buffer.update(idxs[i], td_error_numpy[i])
 
-        if self.extension_name == 'ICM':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, icm_pred_next_s_loss_val, icm_pred_a_loss_val
-        elif self.extension_name == 'RND':
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon, rnd_pred_loss_val
-        elif self.extension_name == 'NGU':
-            pass
-        else:
-            return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
+        return updated, np.mean(critic_loss_val), np.mean(target_q_val), np.mean(current_q_val), self.epsilon
 
     def save_xp(self, state: NDArray, next_state: NDArray, reward: float, action: int, done: bool)-> None:
         # Store transition in the replay buffer.

@@ -312,8 +312,8 @@ if __name__ == '__main__':
     """
 
     env_switch = 1
-    agent_switch = 1
-    aux_switch = 1
+    agent_switch = 7
+    aux_switch = 5
     extractor_switch = 4
     extractor_name = 'CNN1D'
 
