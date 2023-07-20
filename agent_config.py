@@ -1,3 +1,7 @@
+# Blank DQN
+BLANK_DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': 0.005, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,
+                        'batch_size': 128, 'warm_up': 512, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False, 'use_Huber': False, 'example': False}
+BLANK_DQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':False, 'use_Dueling': False}
 
 # DQN
 DQN_Vanilla_agent_config = {'agent_name': 'DQN', 'gamma' : 0.99, 'tau': 0.005, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01, 'update_freq': 4, 'target_update_freq': 20,

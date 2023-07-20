@@ -18,7 +18,10 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
 
     # Agent algorithm - Auxiliary algorithm
     ## DQN
-    if agent_switch == 1:
+    if agent_switch == 0:
+        agent_config = BLANK_DQN_Vanilla_agent_config
+
+    elif agent_switch == 1:
         if ext_switch == 1:
             agent_config = DQN_Vanilla_agent_config
         elif ext_switch == 2:
@@ -119,12 +122,16 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
             agent_config = QR_DQN_RND_agent_config
         elif ext_switch == 4:
             agent_config = QR_DQN_NGU_agent_config
-        elif ext_switch == 7:
+        elif ext_switch == 5:
             agent_config = Safe_QR_DQN_Vanilla_agent_config
-        elif ext_switch == 8:
+        elif ext_switch == 6:
+            raise NotImplementedError("Please correct aux switch")
+        elif ext_switch == 7:
             agent_config = Safe_QR_DQN_RND_agent_config
+        elif ext_switch == 8:
+            raise NotImplementedError("Please correct aux switch")
         else:
-            raise ValueError("Please correct aux switch in [1, 2, 3, 4] for QR-DQN")
+            raise ValueError("Please correct aux switch in [1 ~ 8] for QR-DQN")
 
     ## QUOTA
     elif agent_switch == 6:
@@ -150,8 +157,16 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
             agent_config = IQN_RND_agent_config
         elif ext_switch == 4:
             agent_config = IQN_NGU_agent_config
+        elif ext_switch == 5:
+            agent_config = Safe_IQN_Vanilla_agent_config
+        elif ext_switch == 6:
+            raise NotImplementedError("Please correct aux switch")
+        elif ext_switch == 7:
+            agent_config = Safe_IQN_RND_agent_config
+        elif ext_switch == 8:
+            raise NotImplementedError("Please correct aux switch")
         else:
-            raise ValueError("Please correct aux switch in [1, 2, 3, 4] for IQN")
+            raise ValueError("Please correct aux switch in [1 ~ 8] for IQN")
 
     ## FQF
     elif agent_switch == 8:
@@ -176,12 +191,16 @@ def env_agent_config(env_switch: int, agent_switch: int, ext_switch: int):
             agent_config = MMDQN_RND_agent_config
         elif ext_switch == 4:
             agent_config = MMDQN_NGU_agent_config
-        elif ext_switch == 7:
+        elif ext_switch == 5:
             agent_config = Safe_MMDQN_Vanilla_agent_config
-        elif ext_switch == 8:
+        elif ext_switch == 6:
+            raise NotImplementedError("Please correct aux switch")
+        elif ext_switch == 7:
             agent_config = Safe_MMDQN_RND_agent_config
+        elif ext_switch == 8:
+            raise NotImplementedError("Please correct aux switch")
         else:
-            raise ValueError("Please correct aux switch in [1, 2, 3, 4] for MMDQN")
+            raise ValueError("Please correct aux switch in [1 ~ 8] for MMDQN")
 
     ## C2D
     elif agent_switch == 10:

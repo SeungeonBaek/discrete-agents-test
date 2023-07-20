@@ -8,8 +8,6 @@ Safe_QR_DQN.py
 Safe_IQN.py
 Safe_MMDQN.py
 
-GraphLayers.py
-
 # directory
 10-gSDE/
 11-Neural_CO_with_RL/

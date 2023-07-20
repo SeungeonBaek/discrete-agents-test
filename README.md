@@ -11,11 +11,11 @@ highway-env
 
 # Feature extractor models (..working)
 MLPExtractor  
-RecurrentExtractor (..working)  
+RecurrentExtractor  
 ConvolutionalExtractor (..working)  
 AttentionExtractor (..working)  
 GraphExtractor (..working)  
-CustomExtractor (two example finished)  
+CustomExtractor  
 
 # Single Agent RL Algorithms
 ## DQN family
