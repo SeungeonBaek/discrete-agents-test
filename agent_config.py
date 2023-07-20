@@ -86,7 +86,7 @@ FQF_Vanilla_agent_config['extension'] = {'name': 'gSDE', 'latent_space': 64, 'n_
 
 
 # MMDQN
-MMDQN_Vanilla_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 0, 'epsilon': 0.9, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
+MMDQN_Vanilla_agent_config = {'agent_name': 'MMDQN', 'gamma' : 0.99, 'tau': 0.005, 'particle_num': 200, 'kernel_option': 0, 'kernel_parameter': 1, 'epsilon': 0.99, 'epsilon_decaying_rate': 0.999995, 'min_epsilon': 0.01,
                               'update_freq': 4, 'target_update_freq': 20, 'batch_size': 128, 'warm_up': 1024, 'lr_critic': 0.0005, 'buffer_size': 1000000, 'use_PER': False, 'use_ERE': False, 'reward_normalize' : False}
 MMDQN_Vanilla_agent_config['extension'] = {'name': 'Vanilla', 'use_DDQN':False}
 

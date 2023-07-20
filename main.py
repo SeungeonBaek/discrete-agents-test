@@ -290,6 +290,7 @@ if __name__ == '__main__':
     1: LunarLander-v2, 2: procgen, 3: highway, 4: custom-highway
 
     Agent
+     0: Blank DQN,
      1: DQN,      2: PPO        3: SAC
      4: C51,      5: QR_DQN,    6: QUOTA
      7: IQN,      8: FQF,       9: MMDQN
