@@ -73,7 +73,7 @@ class RLLoader():
         if self.agent_config['agent_name'] == 'DQN':
             from agents.DQN import Agent
         elif self.agent_config['agent_name'] == 'Blank_DQN':
-            from agents.DQN import Agent
+            from agents.Blank_DQN import Agent
         elif self.agent_config['agent_name'] == 'PPO':
             from agents.PPO import Agent
         elif self.agent_config['agent_name'] == 'SAC':
